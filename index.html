@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Condor Scout — 0DTE BTC</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+:root{
+  --bg:#050810;--surface:#0c1220;--surface2:#111827;--border:#1e2d45;
+  --accent:#00e5ff;--green:#00ff88;--red:#ff3b5c;--yellow:#ffd600;--orange:#ff6b35;
+  --text:#e2e8f0;--muted:#64748b;--mono:'Space Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 25% 15%,rgba(0,229,255,.04) 0%,transparent 55%),
+             radial-gradient(ellipse at 75% 85%,rgba(255,107,53,.04) 0%,transparent 55%);
+  pointer-events:none;z-index:0}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
+header{padding:18px 0 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.logo{font-weight:800;font-size:20px;color:var(--accent)}
+.logo-sub{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-left:8px}
+.price-badge{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 14px}
+.pl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px}
+.pv{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-top:10px}
+.tab{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:10px 18px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}.tab-panel.on{display:block}
+
+/* ── INFO BUTTONS ── */
+.ib{width:15px;height:15px;border-radius:50%;background:transparent;border:1px solid var(--muted);color:var(--muted);font-family:var(--mono);font-size:8px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;margin-left:3px;transition:all .15s}
+.ib:hover{border-color:var(--accent);color:var(--accent)}
+#gtt{display:none;position:fixed;z-index:9999;background:#0d1624;border:1px solid var(--accent);border-radius:8px;padding:12px 14px;max-width:270px;font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,.8)}
+#gtt.on{display:block}
+.tt-title{color:var(--accent);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-start}
+
+/* ── SENTIMENT ── */
+.sent-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:10px 0 0}
+.sent-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.sent-ttl{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:4px}
+.sent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.sc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.sc-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:2px}
+.sc-val{font-family:var(--mono);font-size:15px;font-weight:700}
+.sc-sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
+.sc-bar{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.sc-fill{height:100%;border-radius:2px;transition:width .5s}
+
+/* ── DVOL MANUAL ── */
+.dvol-manual{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);border-radius:6px;padding:6px 10px;margin-top:8px}
+.dvol-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.dvol-in{background:transparent;border:none;color:var(--accent);font-family:var(--mono);font-size:14px;font-weight:700;width:60px;outline:none}
+.dvol-in::-webkit-inner-spin-button{-webkit-appearance:none}
+.dvol-ts{font-family:var(--mono);font-size:9px;color:var(--muted)}
+
+/* ── VOL SEMAPHORE ── */
+.vol-sem{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px}
+.vol-dot{width:12px;height:12px;border-radius:50%;background:var(--border);transition:all .3s}
+.vol-dot.on-red{background:var(--red);box-shadow:0 0 8px var(--red)}
+.vol-dot.on-yellow{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
+.vol-dot.on-green{background:var(--green);box-shadow:0 0 8px var(--green)}
+
+/* ── BIAS ── */
+.bias-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:2px}
+.bb{font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.bb[data-on="true"].bull-btn{background:rgba(0,255,136,.12);border-color:var(--green);color:var(--green)}
+.bb[data-on="true"].lat-btn{background:rgba(255,214,0,.1);border-color:var(--yellow);color:var(--yellow)}
+.bb[data-on="true"].bear-btn{background:rgba(255,59,92,.1);border-color:var(--red);color:var(--red)}
+.bb[data-on="true"].neu-btn{background:rgba(0,229,255,.07);border-color:var(--accent);color:var(--accent)}
+
+/* ── CONTROLS ── */
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ctrl{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.ctrl-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.ctrl-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:2px}
+.ctrl-in{width:100%;background:transparent;border:none;color:var(--accent);font-family:var(--mono);font-size:16px;font-weight:700;outline:none}
+.ctrl-in::-webkit-inner-spin-button{-webkit-appearance:none}
+.ctrl-unit{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ── RANGE PANEL ── */
+.range-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:8px}
+.range-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.range-ttl{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:4px}
+.tgl-wrap{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.tgl{appearance:none;-webkit-appearance:none;width:30px;height:15px;background:var(--border);border-radius:8px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.tgl:checked{background:var(--accent)}
+.tgl::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;background:#fff;border-radius:50%;transition:left .2s}
+.tgl:checked::after{left:17px}
+.range-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.range-inputs.off{opacity:.35;pointer-events:none}
+.ri{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px}
+.ri-lbl{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;display:flex;align-items:center;gap:4px}
+.ri-lbl.res{color:var(--green)}.ri-lbl.sup{color:var(--red)}
+.ri-in{width:100%;background:transparent;border:none;font-family:var(--mono);font-size:15px;font-weight:700;outline:none}
+.ri-in.res{color:var(--green)}.ri-in.sup{color:var(--red)}
+.ri-in::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* ── BUTTONS ── */
+.btn-row{display:flex;gap:8px;padding:10px 0;align-items:center;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 18px;border:none;border-radius:6px;cursor:pointer;transition:all .15s}
+.bp{background:var(--accent);color:var(--bg)}.bp:hover{background:#33eaff}
+.bs{background:transparent;color:var(--muted);border:1px solid var(--border)}.bs:hover{border-color:var(--accent);color:var(--accent)}
+.status{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto}
+.exp-sel{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:8px 12px;cursor:pointer;outline:none}
+
+/* ── RESULTS ── */
+.rh{display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px;flex-wrap:wrap;gap:6px}
+.sb{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+.sbb{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer}
+.sbb.on,.sbb:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.06)}
+.sbb.sesgo-on{border-color:var(--yellow);color:var(--yellow);background:rgba(255,214,0,.06)}
+.thead{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr 28px;padding:4px 14px;gap:6px}
+.th{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:2px}
+.th.l{justify-content:flex-start}
+.cg{display:flex;flex-direction:column;gap:6px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr 28px;align-items:center;gap:6px;cursor:pointer;transition:all .15s;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.card:hover{border-color:var(--accent);background:var(--surface2);transform:translateX(2px)}
+.card.t1{border-color:rgba(0,255,136,.4);background:rgba(0,255,136,.02)}
+.card.t2{border-color:rgba(0,229,255,.25)}
+.strikes{display:flex;flex-direction:column;gap:2px}
+.sr{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11px}
+.tag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;min-width:36px;text-align:center}
+.tb{background:rgba(0,255,136,.15);color:var(--green)}.ts{background:rgba(255,59,92,.15);color:var(--red)}
+.sv{color:var(--text);font-weight:700}.sm{color:var(--muted);font-size:10px}
+.metric{text-align:center}
+.mv{font-family:var(--mono);font-size:12px;font-weight:700}
+.ml{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+.good{color:var(--green)}.warn{color:var(--yellow)}.bad{color:var(--red)}.neu{color:var(--accent)}
+.pb{display:inline-flex;font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.ph{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+.pm{background:rgba(255,214,0,.1);color:var(--yellow);border:1px solid rgba(255,214,0,.3)}
+.plo{background:rgba(255,59,92,.1);color:var(--red);border:1px solid rgba(255,59,92,.3)}
+.sw{display:flex;flex-direction:column;align-items:center;gap:2px}
+.sn{font-family:var(--mono);font-size:14px;font-weight:700}
+.sbg{width:36px;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.sbf{height:100%;border-radius:2px}
+.dp{background:var(--surface2);border:1px solid var(--accent);border-radius:10px;padding:12px 16px;margin-top:3px;display:none;animation:fi .2s ease}
+.dp.on{display:block}
+.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-bottom:10px}
+.dl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.dv{font-family:var(--mono);font-size:12px;font-weight:700}
+.ev-box{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.2);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:11px}
+.rv{display:flex;align-items:center;margin-top:8px;height:24px;border-radius:4px;overflow:hidden;font-family:var(--mono);font-size:9px;width:100%}
+.rwin{background:rgba(0,255,136,.18);display:flex;align-items:center;justify-content:center;color:var(--green);padding:0 8px;flex:.9}
+.rloss{background:rgba(255,59,92,.18);display:flex;align-items:center;justify-content:center;color:var(--red);flex:1.2;text-align:center;padding:0 4px}
+.spm{display:inline-block;background:var(--accent);color:var(--bg);font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px}
+.ev-note{font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.5;background:rgba(255,214,0,.04);border:1px solid rgba(255,214,0,.15);border-radius:6px;padding:7px 10px;margin-top:6px}
+
+/* ── MONITOR ── */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;margin:14px 0}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(0,229,255,.03)}
+.port-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.ps-item{text-align:center}
+.ps-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.ps-val{font-family:var(--mono);font-size:15px;font-weight:700}
+.pos-group{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.pos-group-hdr{padding:10px 14px;background:var(--surface2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;cursor:pointer}
+.pgt{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
+.pgm{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pos-table{width:100%;border-collapse:collapse}
+.pos-table th{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.pos-table th:first-child,.pos-table th:nth-child(2){text-align:left}
+.pos-table td{font-family:var(--mono);font-size:10px;padding:7px 10px;border-bottom:1px solid rgba(30,45,69,.4);text-align:right;vertical-align:middle}
+.pos-table td:first-child,.pos-table td:nth-child(2){text-align:left}
+.pos-table tr:hover td{background:rgba(255,255,255,.012)}
+.pos-side{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700}
+.pos-long{background:rgba(0,255,136,.15);color:var(--green)}.pos-short{background:rgba(255,59,92,.15);color:var(--red)}
+.ab{display:inline-flex;font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:2px}
+.al-t{background:rgba(255,107,53,.15);color:var(--orange);border:1px solid rgba(255,107,53,.3)}
+.al-i{background:rgba(0,229,255,.12);color:var(--accent);border:1px solid rgba(0,229,255,.3)}
+.al-r{background:rgba(255,59,92,.1);color:var(--red);border:1px solid rgba(255,59,92,.3)}
+.payoff-wrap{padding:12px 14px 14px;border-top:1px solid var(--border)}
+.payoff-ttl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.payoff-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin-top:8px}
+.ps2{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 9px}
+.ps2-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.ps2-val{font-family:var(--mono);font-size:12px;font-weight:700}
+.exp-hot{color:var(--red)}.exp-warm{color:var(--yellow)}.exp-cool{color:var(--muted)}
+
+/* ── STATS ── */
+.stats-upload{border:2px dashed var(--border);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;margin:14px 0}
+.stats-upload:hover,.stats-upload.drag{border-color:var(--accent);background:rgba(0,229,255,.03)}
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center}
+.stat-card.win{border-color:rgba(0,255,136,.3)}.stat-card.loss{border-color:rgba(255,59,92,.3)}
+.sc2-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.sc2-val{font-family:var(--mono);font-size:22px;font-weight:700}
+.sc2-sub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px}
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin:10px 0}
+.chart-ttl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.sess-table{width:100%;border-collapse:collapse;margin-top:10px}
+.sess-table th{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;cursor:pointer}
+.sess-table th:first-child,.sess-table th:nth-child(2){text-align:left}
+.sess-table th:hover{color:var(--accent)}
+.sess-table td{font-family:var(--mono);font-size:11px;padding:8px 10px;border-bottom:1px solid rgba(30,45,69,.4);text-align:right;vertical-align:middle}
+.sess-table td:first-child,.sess-table td:nth-child(2){text-align:left}
+.sess-table tr:hover td{background:rgba(255,255,255,.015)}
+.badge{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px}
+.badge-win{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+.badge-loss{background:rgba(255,59,92,.1);color:var(--red);border:1px solid rgba(255,59,92,.3)}
+.badge-type{background:rgba(0,229,255,.1);color:var(--accent);border:1px solid rgba(0,229,255,.2)}
+/* stats time filter */
+.time-filter{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:8px 0 4px}
+.tfb{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.tfb:hover{border-color:var(--accent);color:var(--accent)}
+.tfb.on{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent)}
+
+
+/* ── HELP ── */
+.h-sec{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.h-sec-ttl{background:var(--surface2);padding:12px 18px;font-family:var(--sans);font-weight:700;font-size:13px;color:var(--accent);border-bottom:1px solid var(--border)}
+.h-body{padding:14px 18px;display:flex;flex-direction:column;gap:10px;font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--text)}
+.h-body p{line-height:1.8}
+.h-body strong{color:var(--accent)}
+.h-body em{color:var(--yellow)}
+.h-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.h-box.h-info{border-color:rgba(0,229,255,.3);background:rgba(0,229,255,.04)}
+.h-box.h-win{border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.03)}
+.h-box.h-loss{border-color:rgba(255,59,92,.3);background:rgba(255,59,92,.03)}
+.h-box.h-warn{border-color:rgba(255,214,0,.3);background:rgba(255,214,0,.03)}
+.h-box-ttl{font-family:var(--sans);font-weight:700;font-size:11px;margin-bottom:7px;color:var(--accent)}
+.h-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:700px){.h-cols{grid-template-columns:1fr}}
+.h-list{padding-left:14px;list-style:disc;line-height:2;color:var(--text)}
+.h-list li{margin-bottom:2px}
+.h-legs{display:flex;flex-direction:column;gap:5px}
+.h-leg{padding:5px 10px;border-radius:4px;font-family:var(--mono);font-size:10px;font-weight:700}
+.h-leg.buy{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.25)}
+.h-leg.sell{background:rgba(255,59,92,.1);color:var(--red);border:1px solid rgba(255,59,92,.2)}
+.h-timeline{display:flex;flex-direction:column;gap:0}
+.h-tl-item{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid rgba(30,45,69,.5)}
+.h-tl-item:last-child{border-bottom:none}
+.h-tl-time{font-family:var(--mono);font-size:10px;font-weight:700;min-width:130px;padding-top:2px;flex-shrink:0}
+.h-tl-good .h-tl-time{color:var(--green)}
+.h-tl-ok .h-tl-time{color:var(--accent)}
+.h-tl-warn .h-tl-time{color:var(--yellow)}
+.h-tl-bad .h-tl-time{color:var(--red)}
+.h-tl-desc{font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--text)}
+.h-grid-indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.h-ind{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.h-ind-name{font-family:var(--sans);font-weight:700;font-size:11px;color:var(--accent);margin-bottom:5px}
+.h-ind-desc{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.7}
+.h-steps{display:flex;flex-direction:column;gap:0}
+.h-step{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid rgba(30,45,69,.5)}
+.h-step:last-child{border-bottom:none}
+.h-step-n{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--bg);font-family:var(--mono);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.h-step-desc{font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--text)}
+
+
+/* ── LIGHT MODE ── */
+html.light{--bg:#f0f5f9;--surface:#ffffff;--surface2:#f4f8fc;--border:#cbd5e1;--accent:#0070b4;--green:#15803d;--red:#dc2626;--yellow:#b45309;--orange:#c2410c;--text:#0f172a;--muted:#64748b}
+html.light body::before{opacity:0}
+html.light .card{box-shadow:0 1px 4px rgba(0,0,0,.07)}
+html.light #gtt{background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.12)}
+html.light .ib{border-color:#94a3b8;color:#94a3b8}
+html.light .ib:hover{border-color:var(--accent);color:var(--accent)}
+html.light footer{border-top:1px solid var(--border)}
+/* ── SHARED ── */
+.state-box{text-align:center;padding:44px 20px;color:var(--muted)}
+.si{font-size:34px;margin-bottom:8px}
+.st{font-family:var(--sans);font-weight:800;font-size:14px;color:var(--text);margin-bottom:5px}
+.sx{font-family:var(--mono);font-size:11px;line-height:1.7}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{background:rgba(255,59,92,.07);border:1px solid rgba(255,59,92,.3);border-radius:8px;padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--red);line-height:1.7;margin:8px 0}
+footer{padding:16px 0;border-top:1px solid var(--border);margin-top:22px;font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;line-height:1.8}
+@media(max-width:700px){.card{grid-template-columns:1fr 1fr}.thead{display:none}}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Tooltip -->
+<div id="gtt">
+  <div class="tt-title">
+    <span id="tt-ttl"></span>
+    <span id="tt-x" style="cursor:pointer;color:var(--muted);margin-left:10px;flex-shrink:0">✕</span>
+  </div>
+  <div id="tt-body"></div>
+</div>
+
+<!-- Header -->
+<header>
+  <div><span class="logo">⬡ CONDOR SCOUT</span><span class="logo-sub">0DTE · BTC · Deribit</span></div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="price-badge">
+      <div><div class="pl">BTC INDEX</div><div class="pv" id="spd">—</div></div>
+      <div class="dot" id="ld"></div>
+    </div>
+    <button id="theme-toggle" title="Modo claro/oscuro" style="background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:15px;width:30px;height:30px;cursor:pointer;transition:all .15s;flex-shrink:0">🌙</button>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="upd-lbl"></span>
+  </div>
+</header>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button id="tb-scanner" class="tab on">🎯 Scanner</button>
+  <button id="tb-monitor" class="tab">📊 Monitor</button>
+  <button id="tb-stats" class="tab">📈 Estadísticas</button>
+  <button id="tb-help" class="tab">📖 Ayuda</button>
+</div>
+
+<!-- ══════════════════════════════ SCANNER ══════════════════════════════ -->
+<div class="tab-panel on" id="tab-scanner">
+
+<div class="sent-panel">
+  <div class="sent-top">
+    <span class="sent-ttl">
+      📡 MERCADO
+      <button class="ib" id="ib-sent">i</button>
+      &nbsp;<span id="mkt-sig"></span>
+    </span>
+    <div class="bias-row">
+      <span class="bl">Sesgo <button class="ib" id="ib-bias">i</button></span>
+      <button class="bb bull-btn" data-bias="bull" data-on="false">▲ Alcista</button>
+      <button class="bb lat-btn"  data-bias="lat"  data-on="false">↔ Lateral</button>
+      <button class="bb bear-btn" data-bias="bear" data-on="false">▼ Bajista</button>
+      <button class="bb neu-btn"  data-bias="neu"  data-on="true">○ Neutro</button>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">→ solo afecta al orden "Sesgo"</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap">
+    <div class="sent-grid" style="flex:1;min-width:280px">
+      <div class="sc">
+        <div class="sc-lbl">Funding Rate 8h <button class="ib" id="ib-fund">i</button></div>
+        <div class="sc-val" id="sf-v">—</div>
+        <div class="sc-sub" id="sf-s">Cargando...</div>
+        <div class="sc-bar"><div class="sc-fill" id="sf-b" style="width:50%"></div></div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Put/Call Ratio <button class="ib" id="ib-pcr">i</button></div>
+        <div class="sc-val" id="sp-v">—</div>
+        <div class="sc-sub" id="sp-s">Cargando...</div>
+        <div class="sc-bar"><div class="sc-fill" id="sp-b" style="width:50%"></div></div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Skew 25Δ <button class="ib" id="ib-skew">i</button></div>
+        <div class="sc-val" id="ss-v">—</div>
+        <div class="sc-sub" id="ss-s">Cargando...</div>
+        <div class="sc-bar"><div class="sc-fill" id="ss-b" style="width:50%"></div></div>
+      </div>
+    </div>
+    <!-- Volatility semaphore -->
+    <div class="sc" style="min-width:155px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+      <div class="sc-lbl" style="text-align:center">Volatilidad esperada</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="vol-sem">
+          <div class="vol-dot" id="vd-red"></div>
+          <div class="vol-dot" id="vd-yellow"></div>
+          <div class="vol-dot" id="vd-green"></div>
+        </div>
+        <div>
+          <div class="sc-val" id="vol-lbl" style="font-size:12px">—</div>
+          <div class="sc-sub" id="vol-sub">Introduce DVOL</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--accent);margin-top:2px" id="dvol-display">—</div>
+        </div>
+      </div>
+      <div class="dvol-manual">
+        <span class="dvol-lbl">DVOL <button class="ib" id="ib-dvol">i</button></span>
+        <input class="dvol-in" id="dvol-in" type="number" placeholder="56.0" min="10" max="200" step="0.1">
+        <button class="btn bs" id="dvol-save" style="padding:2px 8px;font-size:10px">Guardar</button>
+        <span class="dvol-ts" id="dvol-ts"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="controls">
+  <div class="ctrl">
+    <div class="ctrl-top"><span class="ctrl-lbl">Delta mín. <button class="ib" id="ib-delta">i</button></span></div>
+    <input class="ctrl-in" id="min-delta" type="number" value="0.15" step="0.01" min="0.01" max="0.49">
+    <div class="ctrl-unit">prob. activación</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-top"><span class="ctrl-lbl">Ancho máx. <button class="ib" id="ib-width">i</button></span></div>
+    <input class="ctrl-in" id="max-width" type="number" value="1000" step="50" min="100">
+    <div class="ctrl-unit">$ por spread</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-top"><span class="ctrl-lbl">Debit máx. <button class="ib" id="ib-debit">i</button></span></div>
+    <input class="ctrl-in" id="max-debit" type="number" value="0.020" step="0.001" min="0.001">
+    <div class="ctrl-unit">BTC total</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-top"><span class="ctrl-lbl">Ratio mín. G/P <button class="ib" id="ib-ratio">i</button></span></div>
+    <input class="ctrl-in" id="min-ratio" type="number" value="1.0" step="0.1" min="0.3">
+    <div class="ctrl-unit">G / P</div>
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-top"><span class="ctrl-lbl">Resultados <button class="ib" id="ib-nres">i</button></span></div>
+    <input class="ctrl-in" id="max-results" type="number" value="12" step="4" min="4" max="50">
+    <div class="ctrl-unit">combinaciones</div>
+  </div>
+</div>
+
+<!-- Range panel -->
+<div class="range-panel">
+  <div class="range-hdr">
+    <span class="range-ttl">🎯 RANGO OBJETIVO DE BREAKEVENS <button class="ib" id="ib-range">i</button></span>
+    <div class="tgl-wrap">
+      <input type="checkbox" class="tgl" id="range-toggle">
+      <span id="range-lbl">Desactivado</span>
+    </div>
+  </div>
+  <div class="range-inputs off" id="range-inputs">
+    <div class="ri">
+      <div class="ri-lbl res">▲ Resistencia — objetivo BE↑ <button class="ib" id="ib-res">i</button></div>
+      <input class="ri-in res" id="range-res" type="number" placeholder="ej. 72000" step="500">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">el scanner priorizará BE alcista cercano</div>
+    </div>
+    <div class="ri">
+      <div class="ri-lbl sup">▼ Soporte — objetivo BE↓ <button class="ib" id="ib-sup">i</button></div>
+      <input class="ri-in sup" id="range-sup" type="number" placeholder="ej. 63000" step="500">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">el scanner priorizará BE bajista cercano</div>
+    </div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <button class="btn bp" id="btn-scan">▶ ESCANEAR</button>
+  <select class="exp-sel" id="exp-sel"><option>Cargando expirys...</option></select>
+  <button class="btn bs" id="btn-ref-all">↺ Actualizar todo</button>
+  <span class="status" id="scan-st">Listo</span>
+</div>
+
+<div id="ra">
+  <div class="state-box">
+    <div class="si">🎯</div>
+    <div class="st">Configura y escanea</div>
+    <div class="sx">
+      El sesgo solo cambia el <em>orden</em> — usa "Sesgo ↕" en las opciones de ordenación<br>
+      EV negativo es normal con delta 10–15% — el scanner muestra las mejores opciones disponibles
+    </div>
+  </div>
+</div>
+</div><!-- /scanner -->
+
+<!-- ══════════════════════════════ MONITOR ══════════════════════════════ -->
+<div class="tab-panel" id="tab-monitor">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 0 8px;border-bottom:1px solid var(--border)">
+  <div>
+    <div style="font-family:var(--sans);font-weight:800;font-size:14px">📊 Monitor de Posiciones</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">CSV de Deribit · Actualización automática cada 30s</div>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button class="btn bs" id="btn-m-csv" style="display:none">📂 Cambiar CSV</button>
+    <button class="btn bs" id="btn-m-ref" style="display:none">↺ Actualizar</button>
+  </div>
+</div>
+<div id="mon-content">
+  <div class="upload-zone" id="uzone">
+    <div style="font-size:34px;margin-bottom:8px">📥</div>
+    <div style="font-family:var(--sans);font-weight:700;font-size:14px;margin-bottom:4px">Arrastra tu CSV de posiciones</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.6">o haz clic · Deribit → Portfolio → Export CSV</div>
+  </div>
+  <input type="file" id="fi-mon" accept=".csv" style="display:none">
+</div>
+</div><!-- /monitor -->
+
+<!-- ══════════════════════════════ ESTADÍSTICAS ══════════════════════════════ -->
+<div class="tab-panel" id="tab-stats">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 0 8px;border-bottom:1px solid var(--border)">
+  <div>
+    <div style="font-family:var(--sans);font-weight:800;font-size:14px">📈 Estadísticas de Trading</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">Trade History CSV de Deribit</div>
+  </div>
+  <button class="btn bs" id="btn-s-csv" style="display:none">📂 Cambiar CSV</button>
+</div>
+<!-- Time filter bar — hidden until CSV loaded -->
+<div id="stats-filter-bar" style="display:none">
+  <div class="time-filter">
+    <span style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Periodo:</span>
+    <button class="tfb" data-period="7">7D</button>
+    <button class="tfb" data-period="30">1M</button>
+    <button class="tfb" data-period="90">3M</button>
+    <button class="tfb" data-period="180">6M</button>
+    <button class="tfb" data-period="365">1A</button>
+    <button class="tfb on" data-period="0">Todo</button>
+  </div>
+</div>
+<div id="stats-content">
+  <div class="stats-upload" id="stats-uzone">
+    <div style="font-size:34px;margin-bottom:8px">📊</div>
+    <div style="font-family:var(--sans);font-weight:700;font-size:14px;margin-bottom:4px">Arrastra tu Trade History</div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.6">o haz clic · Deribit → Trade History → Export CSV</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;opacity:.6">Columnas: Instrumento, Lado, Valor, Fecha…</div>
+  </div>
+  <input type="file" id="fi-stats" accept=".csv" style="display:none">
+</div>
+</div><!-- /stats -->
+
+
+<!-- ══════════════════════════════ AYUDA ══════════════════════════════ -->
+<div class="tab-panel" id="tab-help">
+<div style="padding:16px 0 10px;border-bottom:1px solid var(--border);margin-bottom:18px">
+  <div style="font-family:var(--sans);font-weight:800;font-size:18px;color:var(--accent)">📖 Guía completa · Debit Iron Condor 0DTE BTC</div>
+  <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px">Estrategia, mecánica, configuración y operativa avanzada</div>
+</div>
+
+<div id="help-content" style="display:flex;flex-direction:column;gap:16px;padding-bottom:30px">
+
+<!-- SECCIÓN 1 -->
+<div class="h-sec">
+  <div class="h-sec-ttl">1 · ¿Qué es un Debit Iron Condor 0DTE?</div>
+  <div class="h-body">
+    <p>Un <strong>Iron Condor de débito</strong> combina dos spreads direccionales comprados: un <em>debit call spread</em> por encima del precio actual y un <em>debit put spread</em> por debajo. Pagas una prima neta (debit) al abrir, y ganas si BTC se mueve con suficiente fuerza hacia cualquiera de los dos lados antes del vencimiento.</p>
+    <p>En la variante <strong>0DTE</strong> (cero días para el vencimiento), todo ocurre el mismo día. La ventana de operación es de pocas horas, lo que amplifica tanto las ganancias potenciales como la velocidad de decaimiento temporal (theta).</p>
+    <div class="h-box h-info">
+      <div class="h-box-ttl">Estructura de las 4 patas</div>
+      <div class="h-legs">
+        <div class="h-leg buy">BUY CALL — Strike A (más cercano al spot, por encima)</div>
+        <div class="h-leg sell">SELL CALL — Strike B (más alejado del spot, por encima)</div>
+        <div class="h-leg buy">BUY PUT — Strike C (más cercano al spot, por debajo)</div>
+        <div class="h-leg sell">SELL PUT — Strike D (más alejado del spot, por debajo)</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px">
+        Debit total = (Ask BUY C − Bid SELL C) + (Ask BUY P − Bid SELL P)<br>
+        Ganancia máxima = Ancho spread / Spot − Debit total<br>
+        Pérdida máxima = Debit total
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 2 -->
+<div class="h-sec">
+  <div class="h-sec-ttl">2 · Cuándo ganas y cuándo pierdes</div>
+  <div class="h-body">
+    <div class="h-cols">
+      <div class="h-box h-win">
+        <div class="h-box-ttl" style="color:var(--green)">✅ Ganas si...</div>
+        <ul class="h-list">
+          <li>BTC sube por encima del BE↑ (breakeven alcista)</li>
+          <li>BTC baja por debajo del BE↓ (breakeven bajista)</li>
+          <li>Ocurre una ruptura brusca antes de que el theta se coma la prima</li>
+          <li>Consigues cerrar con beneficio parcial en un buen momento intradía</li>
+        </ul>
+      </div>
+      <div class="h-box h-loss">
+        <div class="h-box-ttl" style="color:var(--red)">❌ Pierdes si...</div>
+        <ul class="h-list">
+          <li>BTC cierra entre los dos strikes interiores (zona de pérdida)</li>
+          <li>El mercado se mueve poco y el theta devora la prima</li>
+          <li>Entras tarde y ya no hay tiempo para que BTC alcance los BEs</li>
+          <li>Cierras con prisas con horquillas amplias y pagas de más</li>
+        </ul>
+      </div>
+    </div>
+    <div class="h-box h-info" style="margin-top:10px">
+      <div class="h-box-ttl">¿Por qué el EV puede ser negativo?</div>
+      <p>El valor esperado estadístico (EV = p_win × ganancia − p_lose × debit) es negativo para la mayoría de debit condors con delta 10–15% porque la probabilidad de que BTC llegue a los strikes es menor que el coste de la prima. Esto no significa que la estrategia sea mala — significa que necesitas <strong>edge de timing</strong>: entrar cuando el mercado está a punto de moverse, no cuando está quieto.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 3 -->
+<div class="h-sec">
+  <div class="h-sec-ttl">3 · Mejores horas de entrada</div>
+  <div class="h-body">
+    <div class="h-timeline">
+      <div class="h-tl-item h-tl-good">
+        <div class="h-tl-time">08:00–09:30 UTC</div>
+        <div class="h-tl-desc"><strong>⭐ Apertura europea</strong> — Alta actividad. Las primas son frescas y las horquillas razonables. Si hay catalizador pendiente (datos macro, noticias), esta ventana es clave.</div>
+      </div>
+      <div class="h-tl-item h-tl-ok">
+        <div class="h-tl-time">13:30–15:00 UTC</div>
+        <div class="h-tl-desc"><strong>⭐⭐ Apertura americana</strong> — El mejor momento del día. Máximo volumen, horquillas mínimas, movimientos más limpios. Si hay datos macro USA (CPI, NFP, Fed), 10 minutos después de la publicación.</div>
+      </div>
+      <div class="h-tl-item h-tl-ok">
+        <div class="h-tl-time">09:30–11:00 UTC</div>
+        <div class="h-tl-desc"><strong>Horario europeo activo</strong> — Válido si el mercado ya ha mostrado dirección o hay momentum claro tras la apertura.</div>
+      </div>
+      <div class="h-tl-item h-tl-warn">
+        <div class="h-tl-time">11:00–13:00 UTC</div>
+        <div class="h-tl-desc"><strong>⚠️ Zona muerta</strong> — Europa en pausa, USA no ha abierto. Bajo volumen, spreads amplios. Evitar si es posible salvo que haya movimiento claro.</div>
+      </div>
+      <div class="h-tl-item h-tl-warn">
+        <div class="h-tl-time">15:30–16:00 UTC</div>
+        <div class="h-tl-desc"><strong>⚠️ Tarde del vencimiento</strong> — Si no hay movimiento para entonces, el theta ha comido buena parte de la prima. Evalúa cerrar con pérdida pequeña mejor que esperar.</div>
+      </div>
+      <div class="h-tl-item h-tl-bad">
+        <div class="h-tl-time">&gt; 3 horas antes del vto.</div>
+        <div class="h-tl-desc"><strong>🚫 No entrar</strong> — Con menos de 3h para el vencimiento, el theta es brutal. Solo vale si hay movimiento muy claro y los BEs ya están cerca del precio.</div>
+      </div>
+    </div>
+    <div class="h-box h-info" style="margin-top:10px">
+      <div class="h-box-ttl">Regla de oro de timing</div>
+      <p>Entra cuando el mercado tiene <em>razón para moverse</em>: catalizador macro, ruptura técnica en marcha, o apertura americana con momentum. Nunca entres en mercado lateral sin catalizador solo porque las primas son baratas — son baratas por algo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 4 -->
+<div class="h-sec">
+  <div class="h-sec-ttl">4 · Cómo cerrar antes del vencimiento</div>
+  <div class="h-body">
+    <div class="h-box h-info">
+      <div class="h-box-ttl">Regla del 50% de ganancia</div>
+      <p>Si el spread ganador ha alcanzado el 50% de su ganancia máxima, considera cerrarlo. Los últimos puntos porcentuales de ganancia requieren que BTC se acerque aún más al strike vendido, con riesgo de reversión. Recoger el 50% y abrir una nueva operación es frecuentemente mejor matemáticamente.</p>
+    </div>
+    <div class="h-cols" style="margin-top:10px">
+      <div class="h-box" style="border-color:var(--green)">
+        <div class="h-box-ttl" style="color:var(--green)">Señales para cerrar con beneficio</div>
+        <ul class="h-list">
+          <li>El spread ganador vale 50–70% del máximo posible</li>
+          <li>BTC llega al strike vendido — el spread ya no puede ganar más</li>
+          <li>Quedan &lt;2 horas y tienes beneficio — el theta jugará en tu contra ahora</li>
+          <li>IV cae bruscamente (IV crush) — el valor de las opciones compradas baja</li>
+        </ul>
+      </div>
+      <div class="h-box" style="border-color:var(--red)">
+        <div class="h-box-ttl" style="color:var(--red)">Señales para cerrar con pérdida</div>
+        <ul class="h-list">
+          <li>BTC vuelve al centro de la zona de pérdida y no hay catalizador</li>
+          <li>Has perdido el 50% del debit — regla de stop loss objetivo</li>
+          <li>Quedan &lt;1 hora y BTC está muy lejos de ambos BEs</li>
+          <li>El spread que perdía se convierte en riesgo real (BTC se acerca al strike comprado del otro lado)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="h-box h-warn" style="margin-top:10px">
+      <div class="h-box-ttl">⚠️ Vencimiento y liquidación en efectivo (cash-settled)</div>
+      <p>Las opciones BTC de Deribit liquidan <strong>en efectivo (cash-settled)</strong>: no se produce ninguna compra ni venta de BTC. Al vencimiento, Deribit calcula el beneficio neto según el precio del índice BTC y lo ingresa automáticamente en tu saldo en BTC. Si el condor vence sin valor, simplemente pierde el debit pagado. Aún así, cerca del vencimiento las horquillas se vuelven extremadamente amplias — cierra con <strong>15–20 minutos de margen</strong> para obtener mejor precio y evitar diferenciales de último minuto.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 5 -->
+<div class="h-sec">
+  <div class="h-sec-ttl">5 · Control de horquillas (bid-ask spread)</div>
+  <div class="h-body">
+    <p>Las horquillas amplias son uno de los mayores costes ocultos del 0DTE. En opciones BTC poco líquidas, la diferencia entre bid y ask puede ser del 20–40% del precio, lo que significa que pagas una prima mucho más alta de lo que justifica el mercado.</p>
+    <div class="h-box h-warn">
+      <div class="h-box-ttl">Reglas para gestionar horquillas</div>
+      <ul class="h-list">
+        <li><strong>Punto medio:</strong> Nunca entres al ask de las opciones compradas si puedes negociar. Pon la orden al punto medio (mid) y espera 30–60 segundos.</li>
+        <li><strong>Ratio bid-ask:</strong> El scanner muestra un score de calidad BAQ. Un BAQ &lt;15% es excelente; &gt;30% es caro. Filtra combinaciones con BAQ alto.</li>
+        <li><strong>Horquilla máxima aceptable:</strong> Para un debit de 0.01 BTC, la horquilla de cada opción no debería superar 0.002 BTC. Si supera el 20% del precio, busca otra combinación.</li>
+        <li><strong>Volumen y open interest:</strong> Strikes cerca del ATM tienen horquillas más estrechas. Cuanto más OTM, menos liquidez.</li>
+        <li><strong>Momento del día:</strong> Las horquillas son más estrechas en la apertura americana y en máximos de volumen. En la zona muerta (11–13 UTC) pueden duplicarse.</li>
+        <li><strong>Al cerrar:</strong> Para salir de una posición ganadora, vende al mid del spread, no al bid. Deribit permite negociar los 4 legs como combo.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 6 -->
+<div class="h-sec">
+  <div class="h-sec-ttl">6 · Los indicadores del Scanner explicados</div>
+  <div class="h-body">
+    <div class="h-grid-indicators">
+      <div class="h-ind">
+        <div class="h-ind-name">Funding Rate 8h</div>
+        <div class="h-ind-desc">Tasa de financiación del futuro perpetuo BTC. Si es positivo (&gt;0.01%), los longs pagan a los shorts → más gente está larga → presión alcista acumulada. Si es muy positivo (&gt;0.05%), puede indicar sobrecompra y riesgo de corrección. El scanner usa el último período completado (8h) que es más estable que la tasa en curso.</div>
+      </div>
+      <div class="h-ind">
+        <div class="h-ind-name">Put/Call Ratio</div>
+        <div class="h-ind-desc">Volumen de puts ÷ volumen de calls del vencimiento. &gt;1.2 significa que el mercado compra más protección bajista → miedo. &lt;0.7 indica euforia alcista. Para 0DTE, un PCR entre 0.8–1.1 sugiere mercado incierto, lo que puede ser bueno para un condor. Un PCR extremo (&lt;0.5 o &gt;1.5) indica movimiento probable en una dirección.</div>
+      </div>
+      <div class="h-ind">
+        <div class="h-ind-name">Skew 25-Delta</div>
+        <div class="h-ind-desc">Diferencia entre la IV de las puts 25Δ y las calls 25Δ. Skew positivo = puts más caras → el mercado paga prima extra para protegerse a la baja → sesgo bajista estructural. En BTC este skew suele ser positivo (tail risk bajista). Un skew muy negativo (calls caras) sugiere expectativa de ruptura alcista.</div>
+      </div>
+      <div class="h-ind">
+        <div class="h-ind-name">DVOL (manual)</div>
+        <div class="h-ind-desc">El índice de volatilidad de Deribit: &lt;40% = mercado espera días tranquilos, ideal para condors con BEs cercanos. 40–60% = volatilidad media, condors normales. &gt;60% = mercado espera movimiento grande, los BEs necesitan estar más alejados o es mejor no operar condors. Se actualiza manualmente desde deribit.com/dvol.</div>
+      </div>
+      <div class="h-ind">
+        <div class="h-ind-name">Score del condor</div>
+        <div class="h-ind-desc">Métrica compuesta: EV normalizado (40%) + prob. de ganar (25%) + ratio G/P (15%) + eficiencia del ancho (10%) + BAQ — Bid-Ask Quality (5%). Con rango activo: la proximidad a los BEs objetivo toma el 60% del peso. Un score &gt;40 es excelente; 20–40 es bueno; &lt;10 indica que el condor tiene poca ventaja matemática.</div>
+      </div>
+      <div class="h-ind">
+        <div class="h-ind-name">Prob. Win</div>
+        <div class="h-ind-desc">Probabilidad combinada de que BTC llegue a alguno de los dos lados: p_call + p_put. Para un condor simétrico con delta 15% en cada lado, es ~30%. Esto no significa que pierdas el 70% de las veces — si la distribución de retornos es asimétrica (EV-positive cuando ocurre), puede ser rentable con 30% de win rate si el ratio G/P es alto.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 7 -->
+<div class="h-sec">
+  <div class="h-sec-ttl">7 · Gestión del riesgo y position sizing</div>
+  <div class="h-body">
+    <div class="h-box h-info">
+      <div class="h-box-ttl">Regla del 1–2% por operación</div>
+      <p>El debit total que pagas es tu pérdida máxima. Limítalo a un 1–2% de tu cuenta de opciones. Con una cuenta de 0.5 BTC, el debit máximo por condor debería ser 0.005–0.010 BTC. El scanner usa 0.020 BTC por defecto — ajusta según tu tamaño de cuenta.</p>
+    </div>
+    <div class="h-cols" style="margin-top:10px">
+      <div class="h-box" style="border-color:var(--accent)">
+        <div class="h-box-ttl">Checklist antes de entrar</div>
+        <ul class="h-list">
+          <li>¿El mercado tiene catalizador hoy? (noticias, datos macro)</li>
+          <li>¿DVOL &gt;45%? (más volatilidad = más probable que BTC llegue a los BEs)</li>
+          <li>¿Las horquillas son razonables? (BAQ &lt;25%)</li>
+          <li>¿Quedan al menos 4–5 horas para el vencimiento?</li>
+          <li>¿El debit no supera mi 2% de riesgo?</li>
+          <li>¿Los BEs están en niveles técnicos relevantes?</li>
+        </ul>
+      </div>
+      <div class="h-box" style="border-color:var(--yellow)">
+        <div class="h-box-ttl">Errores comunes a evitar</div>
+        <ul class="h-list">
+          <li>Entrar demasiado tarde (menos de 3h para el vto.)</li>
+          <li>Pagar horquillas excesivas por falta de liquidez</li>
+          <li>No definir stop loss antes de entrar</li>
+          <li>Añadir contratos cuando una posición va en contra (averaging down)</li>
+          <li>Llevar options al vencimiento cerca de un strike (pin risk)</li>
+          <li>Operar en mercado lateral sin catalizador esperado</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN 8 -->
+<div class="h-sec">
+  <div class="h-sec-ttl">8 · Uso del scanner paso a paso</div>
+  <div class="h-body">
+    <div class="h-steps">
+      <div class="h-step"><div class="h-step-n">1</div><div class="h-step-desc"><strong>Revisa los indicadores de mercado.</strong> ¿La señal es alcista, bajista o neutral? ¿El DVOL sugiere volatilidad esperada alta? Configura el sesgo si tienes convicción direccional.</div></div>
+      <div class="h-step"><div class="h-step-n">2</div><div class="h-step-desc"><strong>Selecciona el vencimiento.</strong> Para 0DTE elige "HOY". Para operaciones de 1–3 días elige el vencimiento correspondiente. El scanner muestra los expirys disponibles automáticamente.</div></div>
+      <div class="h-step"><div class="h-step-n">3</div><div class="h-step-desc"><strong>Configura los filtros.</strong> Defaults recomendados: Delta 0.15, Ancho $1000, Debit 0.020 BTC, Ratio 1.0. Si quieres menos riesgo, baja el debit. Si quieres más probabilidad, sube el delta.</div></div>
+      <div class="h-step"><div class="h-step-n">4</div><div class="h-step-desc"><strong>Activa el rango objetivo (opcional).</strong> Si tienes niveles técnicos claros (soporte/resistencia del día), introduce los valores de BE objetivo. El scanner priorizará combinaciones que caigan cerca de esos niveles.</div></div>
+      <div class="h-step"><div class="h-step-n">5</div><div class="h-step-desc"><strong>Escanea y evalúa resultados.</strong> Revisa el Top 3. Compara EV, ratio G/P, probabilidades y calidad de horquillas. Expande el detalle de cada condor para ver los BEs exactos y el diagrama de payoff.</div></div>
+      <div class="h-step"><div class="h-step-n">6</div><div class="h-step-desc"><strong>Ejecuta en Deribit.</strong> Usa el combo order (los 4 legs juntos) para evitar legging risk. Pon la orden al mid del spread o ligeramente por encima del bid. Confirma que el debit ejecutado coincide con lo esperado.</div></div>
+      <div class="h-step"><div class="h-step-n">7</div><div class="h-step-desc"><strong>Monitoriza con el Monitor.</strong> Sube el CSV de posiciones de Deribit para ver el P&L en tiempo real, el tiempo restante y las alertas (theta decay, ITM, expiración próxima).</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /help-content -->
+</div><!-- /tab-help -->
+
+</div><!-- /wrap -->
+<footer>
+  Datos en tiempo real · API pública Deribit · Solo informativo · No es asesoramiento financiero<br>
+  EV = p_call × ganCall + p_put × ganPut − (1−p_call−p_put) × debit
+</footer>
+
+<script>
+// ══════════════════════════════════════════════════
+// TOOLTIP SYSTEM
+// ══════════════════════════════════════════════════
+const TIPS = {
+  'ib-sent':  ['Indicadores de mercado',    'Cuatro métricas en tiempo real: Funding Rate, Put/Call Ratio, Skew 25Δ y DVOL. Combinadas determinan la señal automática Alcista/Neutral/Bajista.'],
+  'ib-bias':  ['Sesgo manual',              'Tu visión direccional para hoy. NO modifica el EV ni el Score. Solo afecta al orden cuando seleccionas "Sesgo ↕": Alcista prioriza el lado call, Bajista el lado put, Lateral la simetría.'],
+  'ib-fund':  ['Funding Rate 8h',           'Tasa del último período de 8h completado. Positivo = longs pagan a shorts → presión alcista. Negativo = shorts pagan → presión bajista. Más estable que la tasa en curso.'],
+  'ib-pcr':   ['Put/Call Ratio',            'Volumen total de puts ÷ calls del vencimiento seleccionado. >1.2 = miedo bajista. <0.7 = euforia alcista. Cercano a 1.0 = mercado neutral.'],
+  'ib-dvol':  ['DVOL manual (índice Deribit)', 'Índice de volatilidad implícita BTC a 30 días de Deribit (análogo al VIX). Introdúcelo manualmente desde la web de Deribit. Se borrará automáticamente si pasan más de 5h. Afecta al semáforo de volatilidad esperada.'],
+  'ib-skew':  ['Skew 25-delta',             'IV de puts 25Δ menos IV de calls 25Δ. Positivo = puts más caras → el mercado paga prima para protegerse → sesgo bajista. Negativo = calls más caras → euforia alcista.'],
+  'ib-delta': ['Delta mínimo',              'Delta ≈ probabilidad de que la opción comprada quede ITM al vencimiento. 0.10–0.20 es habitual para 0DTE. Con delta más alto el condor es más agresivo y el EV puede ser positivo, pero necesitas más debit.'],
+  'ib-width': ['Ancho máximo del spread',   'Diferencia en dólares entre strikes de cada spread. Spreads más estrechos = menos debit = menor pérdida máxima. Para 0DTE, 250–500$ es un rango razonable.'],
+  'ib-debit': ['Debit máximo total (4 patas)', 'Lo máximo que pagas al abrir el condor completo. Es también tu pérdida máxima si BTC expira entre los dos strikes interiores.'],
+  'ib-ratio': ['Ratio ganancia / pérdida',  'Ganancia máxima ÷ debit total. Para 0DTE con delta bajo, un ratio de 1–3x es realista. Mayor ratio implica mayor necesidad de movimiento. Lee siempre junto a la probabilidad.'],
+  'ib-nres':  ['Número de resultados',      'Cuántas combinaciones mostrar ordenadas por score. Con 10–15 tienes suficiente perspectiva. Aumentar mucho este número puede ralentizar el renderizado.'],
+  'ib-range': ['Rango objetivo de breakevens', 'Cuando está activo, el score favorece fuertemente combinaciones cuyos breakevens aproximados caen cerca de los niveles indicados (±5%). El score de proximidad representa el 60% del total. Útil si tienes niveles técnicos claros para el día.'],
+  'ib-res':   ['Resistencia / objetivo BE alcista', 'El breakeven alcista (BE↑) es el precio por encima del cual el condor empieza a ganar dinero. Ponlo en tu resistencia técnica del día o en el nivel donde crees que BTC podría rebotar.'],
+  'ib-sup':   ['Soporte / objetivo BE bajista',  'El breakeven bajista (BE↓) es el precio por debajo del cual el condor empieza a ganar dinero. Ponlo en tu soporte técnico del día o en el nivel de rebote esperado.'],
+  'ev':       ['Valor Esperado (EV)',        'EV = p_call×ganCall + p_put×ganPut − pLoss×debit. Fórmula correcta para eventos mutuamente excluyentes: BTC solo puede estar en un precio al vencimiento. EV negativo es normal para debit condors con delta 10–15%.'],
+  'score':    ['Puntuación (Score)',         'Métrica compuesta: EV normalizado 40% + probabilidad de ganar 25% + ratio G/P 15% + eficiencia del spread 10% + calidad bid-ask 5%. Con rango activo: proximidad al rango 60% + calidad 40%.'],
+  'strikes':  ['Strikes del condor',        'BUY call: la opción que compras por encima del spot. SELL call: la que vendes más arriba. BUY put: la que compras por debajo. SELL put: la que vendes más abajo. La diferencia de precios es el debit neto.'],
+};
+
+function showTip(btn, key) {
+  const info = TIPS[key];
+  if (!info) return;
+  document.getElementById('tt-ttl').textContent = info[0];
+  document.getElementById('tt-body').textContent = info[1];
+  const tt = document.getElementById('gtt');
+  const r = btn.getBoundingClientRect();
+  // position:fixed — no scrollOffset needed; clamp within viewport
+  let top = r.bottom + 6;
+  let left = r.left - 8;
+  left = Math.max(8, Math.min(left, window.innerWidth - 285));
+  if (top + 250 > window.innerHeight) top = Math.max(8, r.top - 250);
+  tt.style.top = top + 'px';
+  tt.style.left = left + 'px';
+  tt.classList.add('on');
+}
+
+// ── Event delegation for ALL .ib buttons (static + dynamic rendered by renderResults) ──
+document.addEventListener('click', function(e) {
+  // Signal cell tooltip
+  const sig = e.target.closest('.sig-cell');
+  if (sig) {
+    const reason = sig.dataset.sig || '';
+    const lbl = sig.dataset.lbl || '';
+    document.getElementById('tt-ttl').textContent = 'Recomendación: ' + lbl;
+    document.getElementById('tt-body').textContent = reason;
+    const tt = document.getElementById('gtt');
+    const r2 = sig.getBoundingClientRect();
+    let top = r2.bottom + 6;
+    let left = r2.left - 8;
+    left = Math.max(8, Math.min(left, window.innerWidth - 285));
+    if (top + 200 > window.innerHeight) top = Math.max(8, r2.top - 200);
+    tt.style.top = top + 'px'; tt.style.left = left + 'px';
+    tt.classList.add('on');
+    e.stopPropagation();
+    return;
+  }
+  if (e.target.classList.contains('ib')) {
+    e.stopPropagation();
+    const key = e.target.dataset.key || e.target.id;
+    if (key) showTip(e.target, key);
+    return;
+  }
+  const gtt = document.getElementById('gtt');
+  if (gtt && !gtt.contains(e.target)) gtt.classList.remove('on');
+});
+document.getElementById('tt-x').addEventListener('click', () => document.getElementById('gtt').classList.remove('on'));
+
+// ══════════════════════════════════════════════════
+// GLOBALS
+// ══════════════════════════════════════════════════
+const API = 'https://www.deribit.com/api/v2';
+const DVOL_KEY = 'condor_dvol_val';
+const DVOL_TS  = 'condor_dvol_ts';
+const DVOL_TTL = 5 * 3600 * 1000;
+
+let spot      = 0;
+let allR      = [];
+let lastOpts  = [];
+let openC     = null;
+let sortK     = 'ev';
+let bias      = 'neu';
+let rangeActive = false;
+let resTarget = 0;
+let supTarget = 0;
+let sent      = { funding: 0, pcr: 1, dvol: null, skew: 0, signal: 'neu' };
+let posRaw    = [];
+let posTimer  = null;
+let allSessions = [];   // full parsed sessions, for re-filtering
+let statsPeriod = 0;    // days, 0 = all
+
+// ══════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════
+['scanner','monitor','stats','help'].forEach(id => {
+  document.getElementById('tb-'+id).addEventListener('click', function() {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.getElementById('tab-'+id).classList.add('on');
+    this.classList.add('on');
+  });
+});
+
+// ══════════════════════════════════════════════════
+// BIAS BUTTONS
+// ══════════════════════════════════════════════════
+document.querySelectorAll('.bb[data-bias]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    bias = btn.dataset.bias;
+    document.querySelectorAll('.bb[data-bias]').forEach(b => b.setAttribute('data-on','false'));
+    btn.setAttribute('data-on','true');
+    if (sortK === 'sesgo' && allR.length) renderResults(allR);
+  });
+});
+
+// ══════════════════════════════════════════════════
+// DVOL MANUAL
+// ══════════════════════════════════════════════════
+function loadDvol() {
+  try {
+    const ts  = parseInt(localStorage.getItem(DVOL_TS) || '0');
+    const val = parseFloat(localStorage.getItem(DVOL_KEY) || '0');
+    if (val > 0 && Date.now() - ts < DVOL_TTL) {
+      sent.dvol = val;
+      document.getElementById('dvol-in').value = val;
+      const elapsed = Math.round((Date.now() - ts) / 60000);
+      document.getElementById('dvol-ts').textContent = `hace ${elapsed}m`;
+      updateVolSemaphore(val);
+      return true;
+    } else if (val > 0) {
+      localStorage.removeItem(DVOL_KEY);
+      localStorage.removeItem(DVOL_TS);
+      document.getElementById('dvol-ts').textContent = 'expirado (>5h)';
+    }
+  } catch(e) {}
+  return false;
+}
+function saveDvol() {
+  const v = parseFloat(document.getElementById('dvol-in').value);
+  if (!v || v <= 0) return;
+  try {
+    localStorage.setItem(DVOL_KEY, v);
+    localStorage.setItem(DVOL_TS, Date.now());
+  } catch(e) {}
+  sent.dvol = v;
+  document.getElementById('dvol-ts').textContent = 'guardado ahora';
+  updateVolSemaphore(v);
+  updateMktSignal();
+}
+document.getElementById('dvol-save').addEventListener('click', saveDvol);
+document.getElementById('dvol-in').addEventListener('keypress', e => { if(e.key==='Enter') saveDvol(); });
+
+function updateVolSemaphore(dv) {
+  ['vd-red','vd-yellow','vd-green'].forEach(id => document.getElementById(id).className = 'vol-dot');
+  document.getElementById('dvol-display').textContent = dv ? `DVOL ${dv.toFixed(1)}` : '—';
+  if (!dv) {
+    document.getElementById('vol-lbl').textContent = '—';
+    document.getElementById('vol-sub').textContent = 'Introduce el DVOL';
+    return;
+  }
+  if (dv >= 60) {
+    document.getElementById('vd-red').className = 'vol-dot on-red';
+    document.getElementById('vol-lbl').textContent = '🔴 ALTA';
+    document.getElementById('vol-sub').textContent = 'Día volátil esperado';
+  } else if (dv >= 40) {
+    document.getElementById('vd-yellow').className = 'vol-dot on-yellow';
+    document.getElementById('vol-lbl').textContent = '🟡 MEDIA';
+    document.getElementById('vol-sub').textContent = 'Movimiento moderado';
+  } else {
+    document.getElementById('vd-green').className = 'vol-dot on-green';
+    document.getElementById('vol-lbl').textContent = '🟢 BAJA';
+    document.getElementById('vol-sub').textContent = 'Día lateral probable';
+  }
+}
+
+// ══════════════════════════════════════════════════
+// RANGE TOGGLE
+// ══════════════════════════════════════════════════
+document.getElementById('range-toggle').addEventListener('change', function() {
+  rangeActive = this.checked;
+  document.getElementById('range-lbl').textContent = rangeActive ? 'Activo' : 'Desactivado';
+  document.getElementById('range-lbl').style.color = rangeActive ? 'var(--accent)' : '';
+  document.getElementById('range-inputs').classList.toggle('off', !rangeActive);
+  rebuildAndRender();
+});
+['range-res','range-sup'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => { if(rangeActive) rebuildAndRender(); });
+});
+function rebuildAndRender() {
+  if (!lastOpts.length) return;
+  resTarget = rangeActive ? (parseFloat(document.getElementById('range-res').value)||0) : 0;
+  supTarget = rangeActive ? (parseFloat(document.getElementById('range-sup').value)||0) : 0;
+  allR = buildCondors(lastOpts);
+  renderResults(allR);
+}
+
+// ══════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════
+async function fj(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message);
+  return j.result;
+}
+
+// ══════════════════════════════════════════════════
+// SENTIMENT
+// ══════════════════════════════════════════════════
+function setSC(pfx, val, cls, sub, pct, col) {
+  const v = document.getElementById(pfx+'-v'); if(v){ v.textContent=val; v.className='sc-val '+cls; }
+  const s = document.getElementById(pfx+'-s'); if(s) s.textContent=sub;
+  const b = document.getElementById(pfx+'-b'); if(b) b.style.cssText=`width:${pct}%;background:${col}`;
+}
+
+function updateMktSignal() {
+  let bu=0, be=0;
+  if (sent.funding > 0.005) bu++; else if (sent.funding < -0.005) be++;
+  if (sent.pcr < 0.7) bu++; else if (sent.pcr > 1.2) be++;
+  if (sent.skew < -3) bu++; else if (sent.skew > 3) be++;
+  sent.signal = bu > be+1 ? 'bull' : be > bu+1 ? 'bear' : 'neu';
+  document.getElementById('mkt-sig').innerHTML =
+    sent.signal==='bull' ? '<span style="color:var(--green)">▲ Alcista</span>' :
+    sent.signal==='bear' ? '<span style="color:var(--red)">▼ Bajista</span>' :
+    '<span style="color:var(--yellow)">↔ Neutral</span>';
+}
+
+async function loadSent() {
+  try {
+    spot = (await fj(`${API}/public/get_index_price?index_name=btc_usd`)).index_price;
+    document.getElementById('spd').textContent = '$' + spot.toLocaleString('es-ES',{maximumFractionDigits:0});
+    setDot('green');
+
+    // Funding rate — Deribit + Binance (average for consensus)
+    try {
+      const fRates = [];
+      // Deribit
+      try {
+        const perp = await fj(`${API}/public/ticker?instrument_name=BTC-PERPETUAL`);
+        const raw8h = perp.funding_8h, rawCur = perp.current_funding;
+        const dr = ((raw8h && raw8h !== 0) ? raw8h : (rawCur||0)) * 100;
+        fRates.push({ex:'Deribit', r:dr});
+      } catch {}
+      // Binance futures (public endpoint, no auth needed)
+      try {
+        const bRes = await fetch('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT');
+        const bJson = await bRes.json();
+        if (bJson.lastFundingRate !== undefined) fRates.push({ex:'Binance', r: parseFloat(bJson.lastFundingRate)*100});
+      } catch {}
+      if (!fRates.length) throw new Error('no data');
+      const fr = fRates.reduce((s,x)=>s+x.r,0) / fRates.length;
+      const sources = fRates.map(x=>x.ex).join('+');
+      sent.funding = fr;
+      setSC('sf',
+        (fr>=0?'+':'')+fr.toFixed(4)+'%',
+        fr>0.005?'good':fr<-0.005?'bad':'warn',
+        `${fr>0.005?'Alcista':fr<-0.005?'Bajista':'Neutral'} · ${sources}${fRates.length>1?' (media)':''}`,
+        Math.min(100,Math.max(0,50+fr*2000)),
+        fr>0.005?'var(--green)':fr<-0.005?'var(--red)':'var(--yellow)');
+    } catch { setSC('sf','—','warn','No disponible',50,'var(--muted)'); }
+
+    // PCR + Skew from selected expiry
+    const ts = document.getElementById('exp-sel').value;
+    if (ts) {
+      try {
+        const ins = await fj(`${API}/public/get_instruments?currency=BTC&kind=option&expired=false`);
+        const fil = ins.filter(i=>i.expiration_timestamp==ts).slice(0,80);
+        const tks = await Promise.all(fil.map(i=>
+          fj(`${API}/public/ticker?instrument_name=${i.instrument_name}`)
+            .then(t=>({tp:i.option_type,vol:t.stats?.volume||0,iv:t.mark_iv||0,delta:Math.abs(t.greeks?.delta||0)}))
+            .catch(()=>null)
+        ));
+        let cv=0,pv=0,p25=[],c25=[];
+        tks.filter(Boolean).forEach(t=>{
+          if(t.tp==='call'){cv+=t.vol;if(t.delta>=.20&&t.delta<=.30)c25.push(t.iv);}
+          else{pv+=t.vol;if(t.delta>=.20&&t.delta<=.30)p25.push(t.iv);}
+        });
+        const pcr=cv>0?pv/cv:1; sent.pcr=pcr;
+        setSC('sp',pcr.toFixed(2),pcr>1.2?'bad':pcr<0.7?'good':'warn',
+          pcr>1.2?'Miedo bajista':pcr<0.7?'Euforia alcista':'Neutral',
+          Math.min(100,pcr/2*100),pcr>1.2?'var(--red)':pcr<0.7?'var(--green)':'var(--yellow)');
+        const avgP=p25.length?p25.reduce((a,b)=>a+b)/p25.length:0;
+        const avgC=c25.length?c25.reduce((a,b)=>a+b)/c25.length:0;
+        const skew=avgP-avgC; sent.skew=skew;
+        setSC('ss',(skew>=0?'+':'')+skew.toFixed(1)+'%',
+          skew>3?'bad':skew<-3?'good':'warn',
+          skew>3?'Puts caras → bajista':skew<-3?'Calls caras → alcista':'Equilibrado',
+          Math.min(100,Math.max(0,50+skew*3)),
+          skew>3?'var(--red)':skew<-3?'var(--green)':'var(--yellow)');
+      } catch {}
+    }
+    updateMktSignal();
+    setUpdLbl();
+  } catch(e) { console.warn('Sent error:',e); }
+}
+
+// ══════════════════════════════════════════════════
+// SCANNER — EXPIRIES
+// ══════════════════════════════════════════════════
+async function loadExp() {
+  try {
+    const ins = await fj(`${API}/public/get_instruments?currency=BTC&kind=option&expired=false`);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const es = new Set();
+    ins.forEach(i=>{
+      const d=new Date(i.expiration_timestamp);
+      const df=Math.ceil((d-today)/86400000);
+      if(df>=0&&df<=3) es.add(i.expiration_timestamp);
+    });
+    const sel=document.getElementById('exp-sel'); sel.innerHTML='';
+    Array.from(es).sort().forEach(ts=>{
+      const d=new Date(ts);
+      const df=Math.ceil((d-today)/86400000);
+      const lbl=df===0?'HOY':df===1?'MAÑANA':`+${df}D`;
+      const fmt=d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'}).toUpperCase();
+      const o=document.createElement('option');
+      o.value=ts; o.textContent=`${lbl} · ${fmt}`;
+      if(df<=1) o.selected=true;
+      sel.appendChild(o);
+    });
+    if(!sel.options.length) sel.innerHTML='<option>Sin expiry 0-3DTE</option>';
+  } catch { document.getElementById('exp-sel').innerHTML='<option>Error</option>'; }
+}
+
+async function getOpts(ts) {
+  const ins = await fj(`${API}/public/get_instruments?currency=BTC&kind=option&expired=false`);
+  const fil = ins.filter(i=>i.expiration_timestamp==ts);
+  const tks = await Promise.all(fil.map(i=>
+    fj(`${API}/public/ticker?instrument_name=${i.instrument_name}`)
+      .then(t=>({strike:i.strike,type:i.option_type,
+        bid:t.best_bid_price||0,ask:t.best_ask_price||0,
+        delta:Math.abs(t.greeks?.delta||0)}))
+      .catch(()=>null)
+  ));
+  return tks.filter(Boolean);
+}
+
+// ══════════════════════════════════════════════════
+// CORE ALGORITHM
+// EV = pC×mgCall + pP×mgPut − pLoss×debit  (mutually exclusive)
+// Score is BIAS-FREE. Bias only affects "sesgo" sort order.
+// ══════════════════════════════════════════════════
+function buildCondors(opts) {
+  const minD   = parseFloat(document.getElementById('min-delta').value);
+  const maxW   = parseFloat(document.getElementById('max-width').value);
+  const maxDeb = parseFloat(document.getElementById('max-debit').value);
+  const minR   = parseFloat(document.getElementById('min-ratio').value);
+  const sp     = spot;
+  resTarget = rangeActive ? (parseFloat(document.getElementById('range-res').value)||0) : 0;
+  supTarget = rangeActive ? (parseFloat(document.getElementById('range-sup').value)||0) : 0;
+
+  const calls = opts.filter(o=>o.type==='call').sort((a,b)=>a.strike-b.strike);
+  const puts  = opts.filter(o=>o.type==='put').sort((a,b)=>b.strike-a.strike);
+  const csp=[], psp=[];
+
+  for(let i=0;i<calls.length-1;i++){
+    for(let j=i+1;j<calls.length;j++){
+      const buy=calls[i],sell=calls[j];
+      if(buy.strike<=sp||buy.delta<minD||buy.delta<=sell.delta) continue;
+      const w=sell.strike-buy.strike;
+      if(w>maxW||w<100) continue;
+      if(buy.ask<=0) continue;
+      const deb=buy.ask-sell.bid;
+      if(deb<=0) continue;
+      const mg=(w/sp)-deb;
+      if(mg<=0||mg/deb<minR) continue;
+      csp.push({buy,sell,deb,w,mg,ratio:mg/deb,prob:buy.delta});
+    }
+  }
+  for(let i=0;i<puts.length-1;i++){
+    for(let j=i+1;j<puts.length;j++){
+      const buy=puts[i],sell=puts[j];
+      if(buy.strike>=sp||buy.delta<minD||buy.delta<=sell.delta) continue;
+      const w=buy.strike-sell.strike;
+      if(w>maxW||w<100) continue;
+      if(buy.ask<=0) continue;
+      const deb=buy.ask-sell.bid;
+      if(deb<=0) continue;
+      const mg=(w/sp)-deb;
+      if(mg<=0||mg/deb<minR) continue;
+      psp.push({buy,sell,deb,w,mg,ratio:mg/deb,prob:buy.delta});
+    }
+  }
+
+  const res=[];
+  for(const cs of csp){
+    for(const ps of psp){
+      const totDeb=cs.deb+ps.deb;
+      if(totDeb>maxDeb) continue;
+      const pC=cs.prob, pP=ps.prob;
+      if(pC+pP>=1) continue;
+      const pLoss=1-pC-pP;
+      const mgCall=(cs.w/sp)-totDeb;
+      const mgPut=(ps.w/sp)-totDeb;
+      if(mgCall<=0&&mgPut<=0) continue;
+      const bestG=Math.max(mgCall,mgPut);
+      const ratio=bestG/totDeb;
+      if(ratio<minR) continue;
+
+      const ev=pC*Math.max(0,mgCall)+pP*Math.max(0,mgPut)-pLoss*totDeb;
+      const dCallPct=(cs.buy.strike-sp)/sp*100;
+      const dPutPct=(sp-ps.buy.strike)/sp*100;
+      const sym=1-Math.abs(dCallPct-dPutPct)/Math.max(dCallPct,dPutPct,0.001);
+      const beCall=cs.buy.strike+totDeb*sp;
+      const bePut=ps.buy.strike-totDeb*sp;
+
+      // Sesgo sort metrics (not used in score)
+      const evC=pC*Math.max(0,mgCall), evP=pP*Math.max(0,mgPut);
+      const sesgoBull=evC/totDeb, sesgoBear=evP/totDeb, sesgoLat=sym*(ev/totDeb+0.5);
+
+      // Bias-free score
+      const evN=Math.max(-1,Math.min(3,ev/totDeb));
+      const probN=Math.min(pC+pP,0.6)/0.6;
+      const ratioN=Math.min(ratio,6)/6;
+      const wScore=1-((cs.w+ps.w)/2)/maxW;
+      const baqC=cs.buy.ask>0?(cs.buy.ask-cs.buy.bid)/cs.buy.ask:1;
+      const baqP=ps.buy.ask>0?(ps.buy.ask-ps.buy.bid)/ps.buy.ask:1;
+      const baqScore=1-Math.min(1,(baqC+baqP)/2);
+      const baseScore=(evN*0.40+probN*0.25+ratioN*0.15+wScore*0.10+baqScore*0.05)*100;
+
+      let rangeProx=0;
+      if(rangeActive&&resTarget>0&&supTarget>0){
+        const tol=0.05;
+        const pC2=Math.max(0,1-Math.abs(beCall-resTarget)/(resTarget*tol));
+        const pP2=Math.max(0,1-Math.abs(bePut-supTarget)/(supTarget*tol));
+        rangeProx=(pC2+pP2)/2;
+      }
+      const score=(rangeActive&&resTarget>0&&supTarget>0)
+        ? rangeProx*60+baseScore*0.4
+        : baseScore;
+
+      res.push({cs,ps,totDeb,mgCall,mgPut,bestG,ratio,pC,pP,pLoss,ev,
+        dCallPct,dPutPct,sym,score,rangeProx,beCall,bePut,
+        sesgoBull,sesgoBear,sesgoLat,lzLow:ps.buy.strike,lzHigh:cs.buy.strike,
+        baqC,baqP,baqScore});
+    }
+  }
+  res.sort((a,b)=>b.score-a.score);
+  return res;
+}
+
+// ══════════════════════════════════════════════════
+// RENDER RESULTS
+// ══════════════════════════════════════════════════
+const f=(n,d=4)=>typeof n==='number'?n.toFixed(d):'—';
+const fK=n=>n>=1000?(n/1000).toFixed(1)+'K':n.toFixed(0);
+const pCls=p=>p>=.30?'ph':p>=.15?'pm':'plo';
+const rCls=r=>r>=3?'good':r>=1.5?'neu':'warn';
+const eCls=e=>e>=0?'good':'bad';
+const biasColors={bull:['▲ Alcista','var(--green)'],bear:['▼ Bajista','var(--red)'],
+  lat:['↔ Lateral','var(--yellow)'],neu:['○ Neutro','var(--accent)']};
+
+function getSortVal(r) {
+  if(sortK==='ratio') return r.ratio;
+  if(sortK==='debit') return -r.totDeb;
+  if(sortK==='prob')  return r.pC+r.pP;
+  if(sortK==='score') return r.score;
+  if(sortK==='sesgo') {
+    if(bias==='bull') return r.sesgoBull;
+    if(bias==='bear') return r.sesgoBear;
+    if(bias==='lat')  return r.sesgoLat;
+    return r.ev/r.totDeb;
+  }
+  return r.ev;
+}
+
+function sortBy(k) {
+  sortK=k;
+  const s=[...allR].sort((a,b)=>getSortVal(b)-getSortVal(a));
+  openC=null; renderResults(s);
+}
+
+function renderResults(results) {
+  const max=parseInt(document.getElementById('max-results').value);
+  const shown=results.slice(0,max);
+  const ra=document.getElementById('ra');
+  if(!shown.length){
+    ra.innerHTML=`<div class="state-box"><div class="si">🔍</div><div class="st">Sin resultados</div>
+      <div class="sx">Ninguna combinación cumple los filtros.${rangeActive?' Ajusta niveles del rango o amplía la tolerancia.':''}<br>
+      Prueba: ↓ delta mín · ↑ debit máx · ↓ ratio mín</div></div>`;
+    return;
+  }
+  const [bTxt,bCol]=biasColors[bias]||biasColors.neu;
+  const sL=[['ev','EV'],['score','Score'],['ratio','Ratio G/P'],['prob','Prob.'],['debit','Debit'],['sesgo','Sesgo ↕']];
+
+  let h=`<div class="rh">
+    <span style="font-family:var(--mono);font-size:11px;color:var(--accent)">${shown.length} de ${results.length}</span>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      ${rangeActive?`<span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:8px;border:1px solid var(--accent);color:var(--accent)">🎯 Rango activo</span>`:''}
+      <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:8px;border:1px solid ${bCol};color:${bCol}">Sesgo: ${bTxt}</span>
+    </div></div>
+  <div class="sb"><span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Ordenar:</span>
+    ${sL.map(([k,v])=>`<button class="sbb ${sortK===k?(k==='sesgo'?'sesgo-on':'on'):''}" data-sort="${k}">${v}</button>`).join('')}
+  </div>
+  <div class="thead">
+    <div class="th l">STRIKES <button class="ib dyn-ib" data-key="strikes">i</button></div>
+    <div class="th">DEBIT</div>
+    <div class="th">GAN. MÁX</div>
+    <div class="th">PROB. WIN</div>
+    <div class="th">RATIO G/P</div>
+    <div class="th">EV <button class="ib dyn-ib" data-key="ev">i</button></div>
+    <div class="th">SCORE <button class="ib dyn-ib" data-key="score">i</button></div>
+    <div class="th"></div>
+  </div><div class="cg">`;
+
+  shown.forEach((r,i)=>{
+    const sc=r.score;
+    const scCol=sc>=30?'good':sc>=5?'neu':'warn';
+    const scFill=sc>=30?'var(--green)':sc>=5?'var(--accent)':'var(--yellow)';
+    const pTot=r.pC+r.pP;
+    const rTag=rangeActive?` <span style="font-size:9px;color:${r.rangeProx>0.5?'var(--green)':'var(--red)'}">🎯${(r.rangeProx*100).toFixed(0)}%</span>`:'';
+
+    h+=`<div class="card ${i===0?'t1':i===1?'t2':''}" data-card="${i}">
+      <div class="strikes">
+        <div class="sr"><span class="tag tb">BUY C</span><span class="sv">${fK(r.cs.buy.strike)}</span><span class="sm"> +${r.dCallPct.toFixed(1)}%</span></div>
+        <div class="sr"><span class="tag ts">SELL C</span><span class="sv">${fK(r.cs.sell.strike)}</span></div>
+        <div class="sr"><span class="tag tb">BUY P</span><span class="sv">${fK(r.ps.buy.strike)}</span><span class="sm"> −${r.dPutPct.toFixed(1)}%</span></div>
+        <div class="sr"><span class="tag ts">SELL P</span><span class="sv">${fK(r.ps.sell.strike)}</span></div>
+      </div>
+      <div class="metric"><div class="mv neu">${f(r.totDeb,5)}</div><div class="ml">BTC·$${(r.totDeb*spot).toFixed(0)}</div></div>
+      <div class="metric"><div class="mv good">+${f(r.bestG,5)}</div><div class="ml">BTC·$${(r.bestG*spot).toFixed(0)}</div></div>
+      <div class="metric"><span class="pb ${pCls(pTot)}">${(pTot*100).toFixed(0)}%</span><div class="ml">c${(r.pC*100).toFixed(0)}+p${(r.pP*100).toFixed(0)}</div></div>
+      <div class="metric"><div class="mv ${rCls(r.ratio)}">${r.ratio.toFixed(2)}x</div></div>
+      <div class="metric"><div class="mv ${eCls(r.ev)}">${r.ev>=0?'+':''}${f(r.ev,5)}</div><div class="ml">BTC</div></div>
+      <div class="sw">
+        <div class="sn ${scCol}">${sc.toFixed(0)}${rTag}</div>
+        <div class="sbg"><div class="sbf" style="width:${Math.min(100,Math.max(0,sc))}%;background:${scFill}"></div></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</div>
+    </div>
+    <div class="dp" id="d${i}">
+      <div class="dg">
+        <div><div class="dl">Call comprada</div><div class="dv">${fK(r.cs.buy.strike)} · Ask ${f(r.cs.buy.ask,5)} · δ${f(r.cs.buy.delta,2)}</div></div>
+        <div><div class="dl">Call vendida</div><div class="dv">${fK(r.cs.sell.strike)} · Bid ${f(r.cs.sell.bid,5)} · δ${f(r.cs.sell.delta,2)}</div></div>
+        <div><div class="dl">Put comprada</div><div class="dv">${fK(r.ps.buy.strike)} · Ask ${f(r.ps.buy.ask,5)} · δ${f(r.ps.buy.delta,2)}</div></div>
+        <div><div class="dl">Put vendida</div><div class="dv">${fK(r.ps.sell.strike)} · Bid ${f(r.ps.sell.bid,5)} · δ${f(r.ps.sell.delta,2)}</div></div>
+        <div><div class="dl">Debit call</div><div class="dv">${f(r.cs.deb,5)} BTC</div></div>
+        <div><div class="dl">Debit put</div><div class="dv">${f(r.ps.deb,5)} BTC</div></div>
+        <div><div class="dl">Ganancia ↑</div><div class="dv good">+${f(r.mgCall,5)} · $${(r.mgCall*spot).toFixed(0)}</div></div>
+        <div><div class="dl">Ganancia ↓</div><div class="dv good">+${f(r.mgPut,5)} · $${(r.mgPut*spot).toFixed(0)}</div></div>
+        <div><div class="dl">BE↑ aprox.</div><div class="dv warn">$${r.beCall.toFixed(0)}${rangeActive&&resTarget?` (obj $${Number(resTarget).toLocaleString()})`:''}</div></div>
+        <div><div class="dl">BE↓ aprox.</div><div class="dv warn">$${r.bePut.toFixed(0)}${rangeActive&&supTarget?` (obj $${Number(supTarget).toLocaleString()})`:''}</div></div>
+        <div><div class="dl">Zona pérdida</div><div class="dv bad">$${fK(r.lzLow)} — $${fK(r.lzHigh)}</div></div>
+        <div><div class="dl">Simetría</div><div class="dv">${(r.sym*100).toFixed(0)}%</div></div>
+        <div><div class="dl">BAQ — Horquilla</div><div class="dv ${r.baqScore>0.85?'good':r.baqScore>0.70?'warn':'bad'}">${(r.baqScore*100).toFixed(0)}% <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">(call ${((1-r.baqC)*100).toFixed(0)}% · put ${((1-r.baqP)*100).toFixed(0)}% spread)</span></div></div>
+      </div>
+      <div class="ev-box">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">EV real (mutuamente excluyente)</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px" class="${eCls(r.ev)}">${r.ev>=0?'+':''}${f(r.ev,5)} BTC · ${r.ev>=0?'+':''}$${(r.ev*spot).toFixed(1)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">
+          = ${(r.pC*100).toFixed(1)}% × +${f(r.mgCall,5)}<br>
+          + ${(r.pP*100).toFixed(1)}% × +${f(r.mgPut,5)}<br>
+          − ${(r.pLoss*100).toFixed(1)}% × ${f(r.totDeb,5)}
+        </div>
+      </div>
+      <div class="ev-note">ℹ️ EV negativo es normal con delta 10–15%. Para EV positivo necesitas delta ≥20% y/o ratio ≥4x. El scanner muestra siempre las mejores opciones disponibles.</div>
+      <div style="margin-top:8px">
+        <div class="rv"><div class="rwin">PUT ↓ WIN</div><div class="rloss">PIERDE $${fK(r.lzLow)}–$${fK(r.lzHigh)}</div><div class="rwin">CALL ↑ WIN</div></div>
+        <div style="margin-top:4px;font-family:var(--mono);font-size:9px;color:var(--muted)">Spot: <span class="spm">$${spot.toFixed(0)}</span></div>
+      </div>
+    </div>`;
+  });
+  h+='</div>';
+  ra.innerHTML=h;
+
+  ra.querySelectorAll('.card[data-card]').forEach(c=>c.addEventListener('click',()=>tog(parseInt(c.dataset.card))));
+  ra.querySelectorAll('.sbb[data-sort]').forEach(b=>b.addEventListener('click',()=>sortBy(b.dataset.sort)));
+  // Attach tips to dynamically created ib buttons
+  // ib tooltip handled by event delegation
+}
+
+function tog(i) {
+  const p=document.getElementById('d'+i);
+  if(!p) return;
+  if(openC===i){p.classList.remove('on');openC=null;}
+  else{
+    if(openC!==null){const q=document.getElementById('d'+openC);if(q)q.classList.remove('on');}
+    p.classList.add('on');openC=i;
+    p.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+async function scan() {
+  const ra=document.getElementById('ra');
+  document.getElementById('scan-st').textContent='Cargando...';
+  setDot('yellow');
+  ra.innerHTML=`<div class="state-box"><div class="si"><span class="spinner"></span></div>
+    <div class="st">Conectando a Deribit...</div><div class="sx" id="sp2">Iniciando</div></div>`;
+  try {
+    const pr=t=>{const e=document.getElementById('sp2');if(e)e.textContent=t;};
+    pr('① Precio BTC...');
+    spot=(await fj(`${API}/public/get_index_price?index_name=btc_usd`)).index_price;
+    document.getElementById('spd').textContent='$'+spot.toLocaleString('es-ES',{maximumFractionDigits:0});
+    const ts=document.getElementById('exp-sel').value;
+    if(!ts) throw new Error('Selecciona un vencimiento');
+    pr('② Cadena de opciones...');
+    const opts=await getOpts(ts);
+    lastOpts=opts;
+    resTarget=rangeActive?(parseFloat(document.getElementById('range-res').value)||0):0;
+    supTarget=rangeActive?(parseFloat(document.getElementById('range-sup').value)||0):0;
+    pr(`③ Evaluando ${opts.length} opciones...`);
+    await new Promise(r=>setTimeout(r,40));
+    allR=buildCondors(opts);
+    sortK='ev'; renderResults(allR);
+    document.getElementById('scan-st').textContent=`Escaneado · ${new Date().toLocaleTimeString('es-ES')} · ${opts.length} opciones`;
+    setDot('green'); setUpdLbl();
+  } catch(e) {
+    ra.innerHTML=`<div class="err">⚠️ ${e.message}<br><br>Descarga el HTML y ábrelo con doble clic en tu navegador. Las restricciones CORS bloquean la conexión desde la previsualización.</div>`;
+    document.getElementById('scan-st').textContent='Error';
+    setDot('red');
+  }
+}
+document.getElementById('btn-scan').addEventListener('click',scan);
+document.getElementById('btn-ref-all').addEventListener('click',()=>{loadSent();scan();});
+
+// ══════════════════════════════════════════════════
+// MONITOR
+// ══════════════════════════════════════════════════
+document.getElementById('uzone').addEventListener('click',()=>document.getElementById('fi-mon').click());
+document.getElementById('uzone').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('uzone').classList.add('drag');});
+document.getElementById('uzone').addEventListener('dragleave',()=>document.getElementById('uzone').classList.remove('drag'));
+document.getElementById('uzone').addEventListener('drop',e=>{e.preventDefault();document.getElementById('uzone').classList.remove('drag');handleMonFile(e.dataTransfer.files[0]);});
+document.getElementById('fi-mon').addEventListener('change',function(){handleMonFile(this.files[0]);});
+document.getElementById('btn-m-csv').addEventListener('click',()=>document.getElementById('fi-mon').click());
+document.getElementById('btn-m-ref').addEventListener('click',refreshMon);
+
+function handleMonFile(file){if(!file)return;const r=new FileReader();r.onload=e=>parseMonCSV(e.target.result);r.readAsText(file);}
+function detectCol(hdr,cands){for(const c of cands){const i=hdr.findIndex(h=>h.toLowerCase().replace(/[^a-z0-9]/g,'').includes(c.toLowerCase().replace(/[^a-z0-9]/g,'')));if(i>=0)return i;}return -1;}
+
+function parseMonCSV(text){
+  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if(lines.length<2){monErr('CSV vacío.');return;}
+  const sep=lines[0].includes(';')?';':',';
+  const hdr=lines[0].split(sep).map(h=>h.replace(/"/g,'').trim());
+  const cols={
+    inst:detectCol(hdr,['instrumento','instrument']),
+    amt:detectCol(hdr,['importe','amount','qty','cantidad']),
+    entry:detectCol(hdr,['precio medio','average price','avg price','entry']),
+    mark:detectCol(hdr,['referencia','mark price','mark_price','mark']),
+    delta:detectCol(hdr,['delta']),theta:detectCol(hdr,['theta']),vega:detectCol(hdr,['vega']),
+  };
+  const rows=lines.slice(1).map(line=>{
+    const v=line.split(sep).map(x=>x.replace(/"/g,'').trim());
+    const g=k=>cols[k]>=0?(v[cols[k]]||'').replace(',','.'):'' ;
+    return{inst:g('inst'),amt:parseFloat(g('amt'))||0,entry:parseFloat(g('entry'))||0,
+      mark:parseFloat(g('mark'))||0,delta:parseFloat(g('delta'))||0,
+      theta:parseFloat(g('theta'))||0,vega:parseFloat(g('vega'))||0};
+  }).filter(r=>r.inst&&(r.inst.includes('-C')||r.inst.includes('-P')));
+  if(!rows.length){monErr(`Sin opciones. Cabecera: ${hdr.join(', ')}`);return;}
+  posRaw=rows;
+  document.getElementById('btn-m-csv').style.display='inline-block';
+  document.getElementById('btn-m-ref').style.display='inline-block';
+  refreshMon();
+  if(posTimer)clearInterval(posTimer);
+  posTimer=setInterval(refreshMon,30000);
+}
+
+async function refreshMon(){
+  if(!posRaw.length)return;
+  if(!spot){try{spot=(await fj(`${API}/public/get_index_price?index_name=btc_usd`)).index_price;}catch{}}
+  const lm={};
+  await Promise.all(posRaw.map(async r=>{
+    try{const tk=await fj(`${API}/public/ticker?instrument_name=${r.inst}`);
+      lm[r.inst]={bid:tk.best_bid_price||0,ask:tk.best_ask_price||0,mark:tk.mark_price||0,
+        iv:tk.mark_iv||0,delta:tk.greeks?.delta||0,theta:tk.greeks?.theta||0,vega:tk.greeks?.vega||0};}
+    catch{lm[r.inst]=null;}
+  }));
+  renderMon(posRaw,lm);
+}
+function calcPnL(row,live){const mn=live?.mark||row.mark||0;if(!row.entry||!row.amt||!mn)return null;return(mn-row.entry)*row.amt;}
+function parseInst(inst){
+  const m=inst.match(/BTC-(\d{1,2})([A-Z]{3})(\d{2})-(\d+)-([CP])/);
+  if(!m)return{strike:0,type:'?',expStr:inst,expDate:null};
+  const mo={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  return{strike:parseInt(m[4]),type:m[5],expDate:new Date(2000+parseInt(m[3]),mo[m[2]],parseInt(m[1]),8,0,0),expStr:`${m[1]}${m[2]}${m[3]}`};
+}
+function hoursLeft(dt){return dt?(dt-Date.now())/3600000:null;}
+
+function buildPayoffSVG(positions,spotNow){
+  const strikes=positions.map(p=>p.strike).filter(Boolean);
+  if(!strikes.length)return null;
+  const minS=Math.min(...strikes)*.97,maxS=Math.max(...strikes)*1.03;
+  const W=580,H=120,pL=50,pR=10,pT=10,pB=28;
+  const xs=Array.from({length:200},(_,i)=>minS+(maxS-minS)*i/199);
+  const payoffs=xs.map(s=>{let pnl=0;for(const p of positions){const intr=p.type==='C'?Math.max(0,s-p.strike)/s:Math.max(0,p.strike-s)/s;pnl+=p.qty*(intr-p.entry);}return pnl;});
+  const maxY=Math.max(...payoffs,0.00001),minY=Math.min(...payoffs,-0.00001);
+  const ys=(H-pT-pB)/(maxY-minY);
+  const xs2=(W-pL-pR)/(maxS-minS);
+  const toX=s=>pL+(s-minS)*xs2,toY=v=>pT+(maxY-v)*ys;
+  const zero=toY(0);
+  const pts=xs.map((s,i)=>`${toX(s).toFixed(1)},${toY(payoffs[i]).toFixed(1)}`);
+  const pathD='M'+pts.join(' L');
+  const fillD=pathD+` L${toX(maxS).toFixed(1)},${zero} L${toX(minS).toFixed(1)},${zero} Z`;
+  const bes=[];
+  for(let i=0;i<payoffs.length-1;i++){if(payoffs[i]*payoffs[i+1]<0){const t=-payoffs[i]/(payoffs[i+1]-payoffs[i]);bes.push(xs[i]+t*(xs[i+1]-xs[i]));}}
+  const maxGain=Math.max(...payoffs),maxLoss=Math.min(...payoffs);
+  let svg=`<svg viewBox="0 0 ${W} ${H+pT}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px">
+    <defs>
+      <linearGradient id="pgr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00ff88" stop-opacity="0.25"/><stop offset="100%" stop-color="#00ff88" stop-opacity="0.02"/></linearGradient>
+      <linearGradient id="prd" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ff3b5c" stop-opacity="0.25"/><stop offset="100%" stop-color="#ff3b5c" stop-opacity="0.02"/></linearGradient>
+      <clipPath id="cab"><rect x="${pL}" y="${pT}" width="${W-pL-pR}" height="${Math.max(0,zero-pT)}"/></clipPath>
+      <clipPath id="cbe"><rect x="${pL}" y="${zero}" width="${W-pL-pR}" height="${Math.max(0,H-pB-zero+pT)}"/></clipPath>
+    </defs>
+    <line x1="${pL}" y1="${zero.toFixed(1)}" x2="${W-pR}" y2="${zero.toFixed(1)}" stroke="#1e2d45" stroke-width="1"/>
+    <path d="${fillD}" fill="url(#pgr)" clip-path="url(#cab)"/>
+    <path d="${fillD}" fill="url(#prd)" clip-path="url(#cbe)"/>
+    <path d="${pathD}" fill="none" stroke="#00e5ff" stroke-width="1.6"/>`;
+  const sx=toX(spotNow);
+  svg+=`<line x1="${sx.toFixed(1)}" y1="${pT}" x2="${sx.toFixed(1)}" y2="${H-pB+pT}" stroke="#00e5ff" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="${sx.toFixed(1)}" y="${(H-pB+pT+11).toFixed(1)}" fill="#00e5ff" font-size="7" font-family="Space Mono" text-anchor="middle">SPOT</text>`;
+  bes.forEach(be=>{const bx=toX(be);
+    svg+=`<line x1="${bx.toFixed(1)}" y1="${pT}" x2="${bx.toFixed(1)}" y2="${H-pB+pT}" stroke="#ffd600" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="${bx.toFixed(1)}" y="${(H-pB+pT+11).toFixed(1)}" fill="#ffd600" font-size="7" font-family="Space Mono" text-anchor="middle">BE$${Math.round(be/1000)}K</text>`;
+  });
+  strikes.forEach(sk=>{const skx=toX(sk);
+    svg+=`<text x="${skx.toFixed(1)}" y="${(H-pB+pT+20).toFixed(1)}" fill="#64748b" font-size="7" font-family="Space Mono" text-anchor="middle">${Math.round(sk/1000)}K</text>`;
+  });
+  svg+=`<text x="${pL-4}" y="${(toY(maxGain)+3).toFixed(1)}" fill="#00ff88" font-size="7" font-family="Space Mono" text-anchor="end">${maxGain>=0?'+':''}${maxGain.toFixed(4)}</text>`;
+  svg+=`<text x="${pL-4}" y="${(toY(maxLoss)+3).toFixed(1)}" fill="#ff3b5c" font-size="7" font-family="Space Mono" text-anchor="end">${maxLoss.toFixed(4)}</text>`;
+  svg+='</svg>';
+  return{svg,maxGain,maxLoss,bes};
+}
+
+function renderMon(rows,lm){
+  const mc=document.getElementById('mon-content');
+  let totPnL=0,totDelta=0,totTheta=0,totVega=0;
+  rows.forEach(r=>{const live=lm[r.inst];const pnl=calcPnL(r,live);if(pnl!==null)totPnL+=pnl;
+    totDelta+=(live?.delta??r.delta)*r.amt;totTheta+=(live?.theta??r.theta)*r.amt;totVega+=(live?.vega??r.vega)*r.amt;});
+  const groups={};
+  rows.forEach(r=>{const inf=parseInst(r.inst);const key=inf.expStr||'Unknown';
+    if(!groups[key])groups[key]={rows:[],expDate:inf.expDate};
+    groups[key].rows.push({...r,...inf,live:lm[r.inst]});});
+  let html=`<div class="port-summary">
+    <div class="ps-item"><div class="ps-lbl">P&L Live</div><div class="ps-val ${totPnL>=0?'good':'bad'}">${totPnL>=0?'+':''}${totPnL.toFixed(4)}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${totPnL>=0?'+':''}$${(totPnL*spot).toFixed(0)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">Delta Neto</div><div class="ps-val ${Math.abs(totDelta)<0.1?'good':'warn'}">${totDelta>=0?'+':''}${totDelta.toFixed(3)}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${Math.abs(totDelta)<0.1?'Neutral ✓':totDelta>0?'Alcista':'Bajista'}</div></div>
+    <div class="ps-item"><div class="ps-lbl">Theta/día (USD)</div><div class="ps-val ${totTheta>=0?'good':'bad'}">${totTheta>=0?'+':''}$${totTheta.toFixed(2)}</div></div>
+    <div class="ps-item"><div class="ps-lbl">Vega</div><div class="ps-val">${totVega>=0?'+':''}${totVega.toFixed(2)}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${totVega>0?'Long':'Short'} vega</div></div>
+    <div class="ps-item"><div class="ps-lbl">Posiciones</div><div class="ps-val neu">${rows.length}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="mon-upd">—</div></div>
+  </div>`;
+  Object.entries(groups).forEach(([key,grp])=>{
+    const hrs=hoursLeft(grp.expDate);
+    const eCls2=hrs===null?'exp-cool':hrs<4?'exp-hot':hrs<12?'exp-warm':'exp-cool';
+    const eTxt=hrs===null?'—':hrs<1?`${(hrs*60).toFixed(0)}m`:hrs<24?`${hrs.toFixed(1)}h`:`${(hrs/24).toFixed(1)}d`;
+    let grpPnL=0; grp.rows.forEach(r=>{const p=calcPnL(r,r.live);if(p!==null)grpPnL+=p;});
+    html+=`<div class="pos-group"><div class="pos-group-hdr" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <span class="pgt">Vto. ${key}</span>
+      <div class="pgm"><span class="${eCls2}" style="font-family:var(--mono);font-size:10px">⏱ ${eTxt}</span>
+        <span style="font-family:var(--mono);font-size:11px;font-weight:700" class="${grpPnL>=0?'good':'bad'}">${grpPnL>=0?'+':''}${grpPnL.toFixed(4)} · $${(grpPnL*spot).toFixed(0)}</span>
+        <span style="color:var(--muted)">▼</span></div></div>
+    <div><div style="overflow-x:auto"><table class="pos-table"><thead><tr>
+      <th>Instrumento</th><th>Lado</th><th>Qty</th><th>Entrada</th><th>Mark</th><th>P&L</th><th>%P&L</th><th>Señal</th><th>Delta</th><th>Theta</th><th>IV</th><th>Vto.</th><th>Alertas</th>
+    </tr></thead><tbody>`;
+    grp.rows.forEach(r=>{
+      const live=r.live;const mn=live?.mark||r.mark||0;const pnl=calcPnL(r,live);
+      const delta=live?.delta??r.delta,theta=live?.theta??r.theta,iv=live?.iv||0;
+      const hrs2=hoursLeft(r.expDate);
+      const eC=hrs2===null?'exp-cool':hrs2<4?'exp-hot':hrs2<12?'exp-warm':'exp-cool';
+      const eT=hrs2===null?'—':hrs2<1?`${(hrs2*60).toFixed(0)}m`:`${hrs2.toFixed(1)}h`;
+      let alerts='';
+      if(hrs2!==null&&hrs2<6)alerts+=`<span class="ab al-t">⚡Theta</span>`;
+      if(hrs2!==null&&hrs2<2)alerts+=`<span class="ab al-r">⏰&lt;2h</span>`;
+      if(spot&&r.strike){const itm=(r.type==='C'&&spot>r.strike)||(r.type==='P'&&spot<r.strike);if(itm)alerts+=`<span class="ab al-i">💰ITM</span>`;}
+      html+=`<tr><td><b>${r.type==='C'?'📈':'📉'} ${r.inst.replace('BTC-','')}</b></td>
+        <td><span class="pos-side ${r.amt>0?'pos-long':'pos-short'}">${r.amt>0?'LONG':'SHORT'}</span></td>
+        <td style="color:${r.amt>0?'var(--green)':'var(--red)'}">${r.amt>0?'+':''}${r.amt}</td>
+        <td>${r.entry.toFixed(4)}</td><td class="${mn>r.entry?'good':mn<r.entry?'bad':''}">${mn.toFixed(4)}</td>
+        <td class="${pnl===null?'':pnl>=0?'good':'bad'}"><b>${pnl===null?'—':(pnl>=0?'+':'')+pnl.toFixed(4)}</b>${pnl!==null?`<br><span style="font-size:9px;color:var(--muted)">${pnl>=0?'+':''}$${(pnl*spot).toFixed(0)}</span>`:''}</td>
+        <td style="text-align:center">${(()=>{const cb=Math.abs((r.entry||0)*(r.amt||1));return cb>0&&pnl!==null?`<span style="font-family:var(--mono);font-size:11px;font-weight:700" class="${pnl/cb*100>=0?'good':'bad'}">${pnl/cb*100>=0?'+':''}${(pnl/cb*100).toFixed(1)}%</span>`:'<span style="color:var(--muted)">—</span>'})()}</td>
+        <td style="text-align:center">${(()=>{if(pnl===null||!r.entry||!r.amt)return'<span style="color:var(--muted)">—</span>';const cb2=Math.abs(r.entry*r.amt);const pp=pnl/cb2*100;let sc=1;if(pp>80)sc+=6;else if(pp>60)sc+=5;else if(pp>40)sc+=3;else if(pp>20)sc+=1;if(pp<-50)sc=Math.max(sc,4);if(pp<-70)sc=Math.max(sc,6);const hl=hoursLeft(r.expDate);if(hl!==null){if(hl<1)sc+=4;else if(hl<2)sc+=3;else if(hl<4)sc+=2;else if(hl<6)sc+=1;}sc=Math.min(10,Math.max(1,sc));const col=sc>=8?'var(--red)':sc>=6?'var(--orange)':sc>=4?'var(--yellow)':'var(--green)';const lbl=sc>=8?'VENDER':sc>=6?'EVALUAR':sc>=4?'VIGILAR':'MANTENER';const ppPct2=pp.toFixed(1);const hlStr=hl!==null?hl.toFixed(1)+"h":"—";const tipReason=`Ganancia: ${ppPct2}% · Tiempo: ${hlStr} · Score: ${sc}/10`;return`<div class="sig-cell" data-sig="${tipReason}" data-lbl="${lbl}" style="font-family:var(--mono);font-size:10px;font-weight:700;color:${col};cursor:pointer">${sc}/10 ${sc>=8?'🔴':sc>=6?'🟠':sc>=4?'🟡':'🟢'}<div style="font-size:8px;letter-spacing:0.5px">${lbl}</div></div>`})()}</td>
+        <td>${delta>=0?'+':''}${delta.toFixed(3)}</td>
+        <td class="${theta<-.001?'bad':theta>0?'good':''}">${theta>=0?'+':''}${theta.toFixed(4)}</td>
+        <td class="${iv>80?'bad':iv>60?'warn':'good'}">${iv>0?iv.toFixed(1)+'%':'—'}</td>
+        <td><span class="${eC}">${eT}</span></td>
+        <td>${alerts||'<span style="color:var(--muted);font-size:10px">—</span>'}</td></tr>`;
+    });
+    html+=`</tbody></table></div>`;
+    const pp=grp.rows.filter(r=>r.strike&&r.type&&r.amt&&r.entry>0).map(r=>({strike:r.strike,type:r.type,qty:r.amt,entry:r.entry}));
+    if(pp.length>=2&&spot>0){const res2=buildPayoffSVG(pp,spot);
+      if(res2){const{svg,maxGain,maxLoss,bes}=res2;
+        html+=`<div class="payoff-wrap"><div class="payoff-ttl">Diagrama de payoff al vencimiento</div>${svg}
+          <div class="payoff-stats">
+            <div class="ps2"><div class="ps2-lbl">Gan. máx.</div><div class="ps2-val good">+${maxGain.toFixed(4)}<br><span style="font-size:10px;color:var(--muted)">+$${(maxGain*spot).toFixed(0)}</span></div></div>
+            <div class="ps2"><div class="ps2-lbl">Pérd. máx.</div><div class="ps2-val bad">${maxLoss.toFixed(4)}<br><span style="font-size:10px;color:var(--muted)">$${(maxLoss*spot).toFixed(0)}</span></div></div>
+            ${bes.map((be,j)=>`<div class="ps2"><div class="ps2-lbl">BE${j===0?'↓':'↑'}</div><div class="ps2-val warn">$${Math.round(be).toLocaleString('es-ES')}</div></div>`).join('')}
+          </div></div>`;
+      }
+    }
+    html+=`</div></div>`;
+  });
+  mc.innerHTML=html;
+  const u=document.getElementById('mon-upd');if(u)u.textContent='↺ '+new Date().toLocaleTimeString('es-ES');
+  setUpdLbl();
+}
+function monErr(msg){document.getElementById('mon-content').innerHTML=`<div class="err">⚠️ ${msg}</div>`;}
+
+// ══════════════════════════════════════════════════
+// STATISTICS
+// ══════════════════════════════════════════════════
+document.getElementById('stats-uzone').addEventListener('click',()=>document.getElementById('fi-stats').click());
+document.getElementById('stats-uzone').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('stats-uzone').classList.add('drag');});
+document.getElementById('stats-uzone').addEventListener('dragleave',()=>document.getElementById('stats-uzone').classList.remove('drag'));
+document.getElementById('stats-uzone').addEventListener('drop',e=>{e.preventDefault();document.getElementById('stats-uzone').classList.remove('drag');handleStatsFile(e.dataTransfer.files[0]);});
+document.getElementById('fi-stats').addEventListener('change',function(){handleStatsFile(this.files[0]);});
+document.getElementById('btn-s-csv').addEventListener('click',()=>document.getElementById('fi-stats').click());
+
+// Time filter buttons
+document.querySelectorAll('.tfb[data-period]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    statsPeriod = parseInt(btn.dataset.period);
+    document.querySelectorAll('.tfb').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    renderStats(filterSessions(allSessions, statsPeriod));
+  });
+});
+
+function filterSessions(sessions, days) {
+  if (days === 0) return sessions;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return sessions.filter(s => s.openDate && s.openDate >= cutoff);
+}
+
+function handleStatsFile(file){if(!file)return;const r=new FileReader();r.onload=e=>parseStatsCSV(e.target.result);r.readAsText(file);}
+
+function parseStatsCSV(text){
+  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if(lines.length<2){document.getElementById('stats-content').innerHTML='<div class="err">⚠️ CSV vacío.</div>';return;}
+  const sep=lines[0].includes(';')?';':',';
+  const hdr=lines[0].split(sep).map(h=>h.replace(/"/g,'').trim());
+  const iInst=detectCol(hdr,['instrumento','instrument']);
+  const iLado=detectCol(hdr,['lado','side']);
+  const iVal=detectCol(hdr,['valor','value']);
+  const iFee=detectCol(hdr,['tarifas','fees','commission']);
+  const iFecha=detectCol(hdr,['fecha','date','time']);
+  const iIdx=detectCol(hdr,['índice','index','indice']);
+
+  const rows=lines.slice(1).map(line=>{
+    const v=line.split(sep).map(x=>x.replace(/"/g,'').trim());
+    const g=i=>i>=0?(v[i]||''):'';
+    const feeStr=g(iFee);
+    return{inst:g(iInst),lado:g(iLado).toLowerCase(),
+      val:parseFloat(g(iVal))||0,
+      fee:(feeStr==='-'||feeStr==='')?0:(parseFloat(feeStr)||0),
+      fecha:g(iFecha),idx:parseFloat(g(iIdx))||0};
+  }).filter(r=>{
+    if(!r.inst) return false;
+    if(r.inst.includes('-CS-')||r.inst.includes('-PS-')||r.inst.includes('ICOND')) return false;
+    const p=r.inst.split('-');
+    return p.length>=4&&(r.inst.endsWith('-C')||r.inst.endsWith('-P'));
+  });
+
+  if(!rows.length){
+    document.getElementById('stats-content').innerHTML=`<div class="err">⚠️ No se encontraron operaciones de opciones individuales.<br>Cabecera: ${hdr.join(', ')}</div>`;
+    return;
+  }
+
+  rows.forEach(r=>{
+    r.parts=r.inst.split('-');
+    r.expiry=r.parts[1]||'';
+    try{
+      const dp=r.fecha.trim();
+      const m=dp.match(/(\d{1,2})\s+(\w{3})\s+(\d{4})/);
+      if(m){
+        const mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11,
+          Ene:0,Abr:3,Ago:7,Set:8,Dic:11};
+        r.date=new Date(parseInt(m[3]),mo[m[2]]||0,parseInt(m[1]));
+      } else { r.date=new Date(dp); }
+    }catch{r.date=null;}
+    r.dateStr=r.date?r.date.toISOString().slice(0,10):'?';
+  });
+
+  const expGroups={};
+  rows.forEach(r=>{
+    const key=r.expiry;
+    if(!expGroups[key])expGroups[key]={rows:[],dates:[]};
+    expGroups[key].rows.push(r);
+    if(r.date&&!isNaN(r.date.getTime())) expGroups[key].dates.push(r.date);
+  });
+
+  allSessions=Object.entries(expGroups).map(([exp,g])=>{
+    const openDate=g.dates.length?new Date(Math.min(...g.dates.map(d=>d.getTime()))):null;
+    const openDateStr=openDate&&!isNaN(openDate.getTime())?openDate.toISOString().slice(0,10):'?';
+    let totalBought=0,totalSold=0,totalFees=0;
+    const types=new Set();
+    g.rows.forEach(r=>{
+      if(r.lado==='buy')totalBought+=r.val;
+      else totalSold+=r.val;
+      totalFees+=r.fee;
+      types.add(r.inst.endsWith('-C')?'C':'P');
+    });
+    const grossPnL=totalSold-totalBought;
+    const netPnL=grossPnL-totalFees;
+    const hasC=types.has('C'),hasP=types.has('P');
+    const stratType=hasC&&hasP?'Iron Condor':hasC?'Call Spread':hasP?'Put Spread':'Otro';
+    const avgIdx=g.rows.filter(r=>r.idx>0).reduce((s,r)=>s+r.idx,0)/Math.max(1,g.rows.filter(r=>r.idx>0).length);
+    return{exp,openDate,openDateStr,totalBought,totalSold,totalFees,grossPnL,netPnL,
+      stratType,tradeCount:g.rows.length,avgIdx,win:netPnL>0};
+  }).filter(s=>s.totalBought>0||s.totalSold>0)
+    .sort((a,b)=>(a.openDate||new Date(0))-(b.openDate||new Date(0)));
+
+  // Cumulative P&L on full set
+  let cum=0; allSessions.forEach(s=>{cum+=s.netPnL;s.cumPnL=cum;});
+
+  document.getElementById('btn-s-csv').style.display='inline-block';
+  document.getElementById('stats-filter-bar').style.display='block';
+
+  // Apply current period filter
+  statsPeriod=0;
+  document.querySelectorAll('.tfb').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.tfb[data-period="0"]').classList.add('on');
+  renderStats(allSessions);
+}
+
+function renderStats(sessions){
+  // Recompute cumulative for filtered set
+  let cum=0; sessions.forEach(s=>{cum+=s.netPnL;s.cumPnLFiltered=cum;});
+
+  const sc=document.getElementById('stats-content');
+  const total=sessions.length;
+  if(total===0){sc.innerHTML='<div class="err">⚠️ No hay sesiones en el período seleccionado.</div>';return;}
+
+  const wins=sessions.filter(s=>s.win).length;
+  const losses=total-wins;
+  const winRate=wins/total;
+  const totalPnL=sessions.reduce((s,x)=>s+x.netPnL,0);
+  const totalFees=sessions.reduce((s,x)=>s+x.totalFees,0);
+  const avgWin=wins>0?sessions.filter(s=>s.win).reduce((s,x)=>s+x.netPnL,0)/wins:0;
+  const avgLoss=losses>0?sessions.filter(s=>!s.win).reduce((s,x)=>s+x.netPnL,0)/losses:0;
+  const profitFactor=avgLoss!==0?Math.abs(avgWin/avgLoss):0;
+  const bestSess=sessions.reduce((b,s)=>s.netPnL>b.netPnL?s:b,{netPnL:-Infinity,exp:'—'});
+  const worstSess=sessions.reduce((b,s)=>s.netPnL<b.netPnL?s:b,{netPnL:Infinity,exp:'—'});
+  const avgIdx=sessions.filter(s=>s.avgIdx>0).reduce((s,x)=>s+x.avgIdx,0)/Math.max(1,sessions.filter(s=>s.avgIdx>0).length)||70000;
+  const pnlUsd=totalPnL*avgIdx;
+
+  const periodLabel = statsPeriod===0?'Todo el historial':
+    statsPeriod===7?'Última semana':statsPeriod===30?'Último mes':
+    statsPeriod===90?'Últimos 3 meses':statsPeriod===180?'Últimos 6 meses':'Último año';
+
+  let html=`<div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin:6px 0 4px;letter-spacing:1px">📅 ${periodLabel} · ${total} sesiones</div>`;
+
+  html+=`<div class="stat-cards">
+    <div class="stat-card"><div class="sc2-lbl">Sesiones</div><div class="sc2-val neu">${total}</div><div class="sc2-sub">${wins} victorias / ${losses} derrotas</div></div>
+    <div class="stat-card ${totalPnL>=0?'win':'loss'}"><div class="sc2-lbl">P&L Total</div>
+      <div class="sc2-val ${totalPnL>=0?'good':'bad'}">${totalPnL>=0?'+':''}${totalPnL.toFixed(5)}</div>
+      <div class="sc2-sub">~${totalPnL>=0?'+':''}$${pnlUsd.toFixed(0)} est.</div></div>
+    <div class="stat-card ${winRate>=0.5?'win':'loss'}"><div class="sc2-lbl">Win Rate</div>
+      <div class="sc2-val ${winRate>=0.5?'good':winRate>=0.4?'warn':'bad'}">${(winRate*100).toFixed(0)}%</div>
+      <div class="sc2-sub">${wins}/${total} rentables</div></div>
+    <div class="stat-card"><div class="sc2-lbl">Profit Factor</div>
+      <div class="sc2-val ${profitFactor>=1.5?'good':profitFactor>=1?'warn':'bad'}">${profitFactor.toFixed(2)}x</div>
+      <div class="sc2-sub">|media win| / |media loss|</div></div>
+    <div class="stat-card win"><div class="sc2-lbl">Media Win</div>
+      <div class="sc2-val good">+${avgWin.toFixed(5)}</div><div class="sc2-sub">BTC por sesión ganadora</div></div>
+    <div class="stat-card loss"><div class="sc2-lbl">Media Loss</div>
+      <div class="sc2-val bad">${avgLoss.toFixed(5)}</div><div class="sc2-sub">BTC por sesión perdedora</div></div>
+    <div class="stat-card"><div class="sc2-lbl">Total Fees</div>
+      <div class="sc2-val warn">-${totalFees.toFixed(5)}</div><div class="sc2-sub">~$${(totalFees*avgIdx).toFixed(0)} en comisiones</div></div>
+    <div class="stat-card win"><div class="sc2-lbl">Mejor sesión</div>
+      <div class="sc2-val good">+${bestSess.netPnL.toFixed(5)}</div><div class="sc2-sub">${bestSess.exp}</div></div>
+    <div class="stat-card loss"><div class="sc2-lbl">Peor sesión</div>
+      <div class="sc2-val bad">${worstSess.netPnL.toFixed(5)}</div><div class="sc2-sub">${worstSess.exp}</div></div>
+  </div>`;
+
+  html+=`<div class="chart-wrap"><div class="chart-ttl">P&L ACUMULADO</div>${buildPnLChart(sessions,'cumPnLFiltered')}</div>`;
+  html+=`<div class="chart-wrap"><div class="chart-ttl">P&L POR SESIÓN</div>${buildBarChart(sessions)}</div>`;
+
+  html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin:10px 0">
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">HISTORIAL</div>
+    <div style="overflow-x:auto"><table class="sess-table"><thead><tr>
+      <th>Apertura</th><th>Vencimiento</th><th>Tipo</th><th>Patas</th>
+      <th>Debit pagado</th><th>P&L bruto</th><th>Fees</th><th>P&L neto</th><th>Resultado</th>
+    </tr></thead><tbody>`;
+  sessions.slice().reverse().forEach(s=>{
+    html+=`<tr>
+      <td style="text-align:left;font-family:var(--mono);font-size:10px">${s.openDateStr}</td>
+      <td style="text-align:left"><b style="color:var(--accent)">${s.exp}</b></td>
+      <td><span class="badge badge-type">${s.stratType}</span></td>
+      <td>${s.tradeCount}</td>
+      <td class="bad">${s.totalBought>0?'-'+s.totalBought.toFixed(5):'—'}</td>
+      <td class="${s.grossPnL>=0?'good':'bad'}">${s.grossPnL>=0?'+':''}${s.grossPnL.toFixed(5)}</td>
+      <td class="warn">${s.totalFees>0?'-'+s.totalFees.toFixed(5):'—'}</td>
+      <td class="${s.netPnL>=0?'good':'bad'}"><b>${s.netPnL>=0?'+':''}${s.netPnL.toFixed(5)}</b></td>
+      <td><span class="badge ${s.win?'badge-win':'badge-loss'}">${s.win?'✅ WIN':'❌ LOSS'}</span></td>
+    </tr>`;
+  });
+  html+=`</tbody></table></div></div>`;
+
+  // By strategy type
+  const byType={};
+  sessions.forEach(s=>{
+    if(!byType[s.stratType])byType[s.stratType]={count:0,pnl:0,wins:0};
+    byType[s.stratType].count++;byType[s.stratType].pnl+=s.netPnL;
+    if(s.win)byType[s.stratType].wins++;
+  });
+  html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin:10px 0">
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">POR TIPO DE ESTRATEGIA</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">
+    ${Object.entries(byType).map(([type,d])=>`
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">${type}</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700" class="${d.pnl>=0?'good':'bad'}">${d.pnl>=0?'+':''}${d.pnl.toFixed(5)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px">${d.count} sesiones · ${(d.wins/d.count*100).toFixed(0)}% win rate</div>
+      </div>`).join('')}
+    </div></div>`;
+
+  html += buildMonteCarlo(sessions);
+  sc.innerHTML=html;
+}
+
+function buildPnLChart(sessions, cumKey='cumPnLFiltered'){
+  if(!sessions.length)return'';
+  const W=700,H=140,pL=60,pR=20,pT=15,pB=25;
+  const cW=W-pL-pR,cH=H-pT-pB;
+  const pnls=sessions.map(s=>s[cumKey]||0);
+  const maxV=Math.max(...pnls,0.00001),minV=Math.min(...pnls,-0.00001);
+  const range=maxV-minV||0.0001;
+  const toX=i=>pL+cW*i/Math.max(sessions.length-1,1);
+  const toY=v=>pT+cH*(maxV-v)/range;
+  const zero=toY(0);
+  const pts=sessions.map((s,i)=>`${toX(i).toFixed(1)},${toY(s[cumKey]||0).toFixed(1)}`);
+  const posPath=`M${toX(0)},${zero} `+sessions.map((s,i)=>`L${toX(i).toFixed(1)},${toY(s[cumKey]||0).toFixed(1)}`).join(' ')+` L${toX(sessions.length-1)},${zero} Z`;
+  const linePath='M'+pts.join(' L');
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px">
+    <defs><linearGradient id="pnlg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00ff88" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#00ff88" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#ff3b5c" stop-opacity="0.05"/>
+    </linearGradient></defs>
+    <line x1="${pL}" y1="${zero.toFixed(1)}" x2="${W-pR}" y2="${zero.toFixed(1)}" stroke="#1e2d45" stroke-width="1" stroke-dasharray="4,4"/>`;
+
+  [maxV,maxV/2,0,minV/2,minV].forEach(v=>{
+    const y=toY(v);
+    if(y<pT-5||y>H-pB+5) return;
+    svg+=`<text x="${pL-4}" y="${(y+3).toFixed(1)}" fill="#64748b" font-size="8" font-family="Space Mono" text-anchor="end">${v>=0?'+':''}${v.toFixed(4)}</text>`;
+    svg+=`<line x1="${pL}" y1="${y.toFixed(1)}" x2="${W-pR}" y2="${y.toFixed(1)}" stroke="#1e2d45" stroke-width="0.5"/>`;
+  });
+
+  sessions.forEach((s,i)=>{
+    const x=toX(i),y=toY(s[cumKey]||0);
+    svg+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${s.win?'var(--green)':'var(--red)'}" opacity="0.8"/>`;
+    if(i===0||i===sessions.length-1||(sessions.length>1&&i%Math.max(1,Math.floor(sessions.length/6))===0)){
+      svg+=`<text x="${x.toFixed(1)}" y="${(H-5).toFixed(1)}" fill="#64748b" font-size="7" font-family="Space Mono" text-anchor="middle">${s.openDateStr.slice(5)}</text>`;
+    }
+  });
+
+  svg+=`<path d="${posPath}" fill="url(#pnlg)" opacity="0.6"/>
+    <path d="${linePath}" fill="none" stroke="#00e5ff" stroke-width="1.8"/>
+    </svg>`;
+  return svg;
+}
+
+function buildBarChart(sessions){
+  if(!sessions.length) return '';
+  const W=700,H=130,pL=60,pR=20,pT=15,pB=25;
+  const cW=W-pL-pR,cH=H-pT-pB;
+  const pnls=sessions.map(s=>s.netPnL);
+  const maxV=Math.max(...pnls,0.00001),minV=Math.min(...pnls,-0.00001);
+  const range=maxV-minV||0.0001;
+  const bW=Math.max(3,Math.min(20,cW/sessions.length-2));
+  const toX=i=>pL+cW*i/sessions.length+cW/sessions.length/2;
+  const toY=v=>pT+cH*(maxV-v)/range;
+  const zero=toY(0);
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px">
+    <line x1="${pL}" y1="${zero.toFixed(1)}" x2="${W-pR}" y2="${zero.toFixed(1)}" stroke="#1e2d45" stroke-width="1"/>`;
+
+  sessions.forEach((s,i)=>{
+    const x=toX(i),y=toY(s.netPnL),h2=Math.abs(y-zero),yTop=Math.min(y,zero);
+    svg+=`<rect x="${(x-bW/2).toFixed(1)}" y="${yTop.toFixed(1)}" width="${bW}" height="${Math.max(1,h2).toFixed(1)}" fill="${s.win?'rgba(0,255,136,0.6)':'rgba(255,59,92,0.6)'}"/>`;
+  });
+
+  [maxV,0,minV].forEach(v=>{
+    const y=toY(v);
+    if(y<pT-5||y>H-pB+5) return;
+    svg+=`<text x="${pL-4}" y="${(y+3).toFixed(1)}" fill="#64748b" font-size="8" font-family="Space Mono" text-anchor="end">${v>=0?'+':''}${v.toFixed(4)}</text>`;
+  });
+  svg+='</svg>';
+  return svg;
+}
+
+
+// ══════════════════════════════════════════════════
+// MONTE CARLO SIMULATION
+// ══════════════════════════════════════════════════
+function buildMonteCarlo(sessions) {
+  if (sessions.length < 5) {
+    return '<div class="err">⚠️ Se necesitan al menos 5 sesiones para la simulación Monte Carlo.</div>';
+  }
+
+  const wins = sessions.filter(s=>s.win);
+  const losses = sessions.filter(s=>!s.win);
+  const winRate = wins.length / sessions.length;
+  const winPnLs = wins.map(s=>s.netPnL);
+  const lossPnLs = losses.map(s=>s.netPnL);
+
+  // Estimate sessions per month from date range
+  const dates = sessions.filter(s=>s.openDate).map(s=>s.openDate.getTime());
+  let sessPerMonth = 20; // default
+  if (dates.length >= 2) {
+    const rangeDays = (Math.max(...dates) - Math.min(...dates)) / 86400000;
+    if (rangeDays > 7) {
+      sessPerMonth = Math.round(sessions.length / (rangeDays / 30));
+      sessPerMonth = Math.max(5, Math.min(sessPerMonth, 30));
+    }
+  }
+
+  const SIMS = 2000;
+  const HORIZONS = [
+    { label: '6 Meses', months: 6 },
+    { label: '1 Año', months: 12 },
+    { label: '2 Años', months: 24 },
+  ];
+
+  // Random sample from array
+  const rnd = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // Run simulations for each horizon
+  const results = HORIZONS.map(h => {
+    const nSess = Math.round(h.months * sessPerMonth);
+    const finalPnLs = [];
+    for (let s = 0; s < SIMS; s++) {
+      let cum = 0;
+      for (let i = 0; i < nSess; i++) {
+        if (Math.random() < winRate) {
+          cum += winPnLs.length ? rnd(winPnLs) : 0;
+        } else {
+          cum += lossPnLs.length ? rnd(lossPnLs) : 0;
+        }
+      }
+      finalPnLs.push(cum);
+    }
+    finalPnLs.sort((a,b)=>a-b);
+    const pct = p => finalPnLs[Math.floor(p * SIMS)];
+    const pPositive = finalPnLs.filter(x=>x>0).length / SIMS;
+    return {
+      label: h.label, months: h.months, nSess,
+      p5: pct(0.05), p25: pct(0.25), p50: pct(0.50), p75: pct(0.75), p95: pct(0.95),
+      pPositive,
+      allFinals: finalPnLs,
+    };
+  });
+
+  // avg BTC price for USD conversion
+  const avgIdx = sessions.filter(s=>s.avgIdx>0).reduce((s,x)=>s+x.avgIdx,0)/Math.max(1,sessions.filter(s=>s.avgIdx>0).length)||70000;
+
+  // ── Fan chart SVG ──
+  const W=700,H=160,pL=68,pR=20,pT=15,pB=25;
+  const cW=W-pL-pR, cH=H-pT-pB;
+  const allVals=[...results.flatMap(r=>[r.p5,r.p95]),0];
+  const maxV=Math.max(...allVals)*1.1, minV=Math.min(...allVals)*1.1;
+  const range=Math.max(Math.abs(maxV-minV),0.0001);
+  const toX=i=>{
+    // x positions: 0 = origin, then 3 horizon points
+    const xs=[pL, pL+cW*0.32, pL+cW*0.62, pL+cW];
+    return xs[i];
+  };
+  const toY=v=>pT+cH*(maxV-v)/range;
+  const zero=toY(0);
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px">
+    <defs>
+      <linearGradient id="mcg1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#00ff88" stop-opacity="0.05"/><stop offset="100%" stop-color="#00ff88" stop-opacity="0.2"/></linearGradient>
+      <linearGradient id="mcg2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffd600" stop-opacity="0.05"/><stop offset="100%" stop-color="#ffd600" stop-opacity="0.15"/></linearGradient>
+      <linearGradient id="mcg3" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff3b5c" stop-opacity="0.05"/><stop offset="100%" stop-color="#ff3b5c" stop-opacity="0.15"/></linearGradient>
+    </defs>
+    <line x1="${pL}" y1="${zero.toFixed(1)}" x2="${W-pR}" y2="${zero.toFixed(1)}" stroke="#1e2d45" stroke-width="1" stroke-dasharray="5,4"/>`;
+
+  // Y axis lines
+  [maxV, maxV/2, 0, minV/2, minV].forEach(v=>{
+    if(Math.abs(v)<0.000001)return;
+    const y=toY(v);
+    if(y<pT-5||y>H-pB+5)return;
+    svg+=`<line x1="${pL}" y1="${y.toFixed(1)}" x2="${W-pR}" y2="${y.toFixed(1)}" stroke="#0f1a2e" stroke-width="1"/>`;
+    svg+=`<text x="${pL-4}" y="${(y+3).toFixed(1)}" fill="#64748b" font-size="8" font-family="Space Mono" text-anchor="end">${v>=0?'+':''}${v.toFixed(3)}</text>`;
+  });
+
+  // Origin dot
+  const ox=toX(0), oy=toY(0);
+  svg+=`<circle cx="${ox}" cy="${oy.toFixed(1)}" r="4" fill="var(--accent)" opacity="0.9"/>`;
+
+  // For each horizon: draw fan bands and median line
+  const colors=['#00ff88','#ffd600','#ff3b5c'];
+  results.forEach((r,i)=>{
+    const x=toX(i+1);
+    const y5=toY(r.p5),y25=toY(r.p25),y50=toY(r.p50),y75=toY(r.p75),y95=toY(r.p95);
+    // 5–95 band
+    svg+=`<polygon points="${ox},${oy.toFixed(1)} ${x},${y5.toFixed(1)} ${x},${y95.toFixed(1)}" fill="${colors[i]}" opacity="0.07"/>`;
+    // 25–75 band
+    svg+=`<polygon points="${ox},${oy.toFixed(1)} ${x},${y25.toFixed(1)} ${x},${y75.toFixed(1)}" fill="${colors[i]}" opacity="0.18"/>`;
+    // Median line
+    svg+=`<line x1="${ox}" y1="${oy.toFixed(1)}" x2="${x}" y2="${y50.toFixed(1)}" stroke="${colors[i]}" stroke-width="2" opacity="0.9"/>`;
+    // Median dot
+    svg+=`<circle cx="${x}" cy="${y50.toFixed(1)}" r="4" fill="${colors[i]}" opacity="0.9"/>`;
+    // P5/P95 lines
+    svg+=`<line x1="${x-4}" y1="${y5.toFixed(1)}" x2="${x+4}" y2="${y5.toFixed(1)}" stroke="${colors[i]}" stroke-width="1.5" opacity="0.6"/>`;
+    svg+=`<line x1="${x-4}" y1="${y95.toFixed(1)}" x2="${x+4}" y2="${y95.toFixed(1)}" stroke="${colors[i]}" stroke-width="1.5" opacity="0.6"/>`;
+    // Label
+    svg+=`<text x="${x}" y="${(H-5).toFixed(1)}" fill="${colors[i]}" font-size="9" font-family="Space Mono" text-anchor="middle" font-weight="700">${r.label}</text>`;
+  });
+
+  // Legend
+  svg+=`<text x="${pL+4}" y="${(pT+10).toFixed(1)}" fill="#64748b" font-size="8" font-family="Space Mono">P5—P95 / P25—P75 / Mediana · ${SIMS.toLocaleString()} simulaciones</text>`;
+  svg+='</svg>';
+
+  // Summary cards per horizon
+  let html = `<div class="chart-wrap" style="border-color:rgba(0,229,255,.2)">
+    <div class="chart-ttl" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+      <span>🎲 SIMULACIÓN MONTE CARLO · ${SIMS.toLocaleString()} trayectorias</span>
+      <span style="color:var(--muted);font-size:9px;text-transform:none;letter-spacing:0">~${sessPerMonth} sesiones/mes · basado en ${sessions.length} sesiones históricas</span>
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+      Win rate histórico: <span style="color:var(--accent)">${(winRate*100).toFixed(0)}%</span> · 
+      Media win: <span style="color:var(--green)">+${(wins.reduce((s,x)=>s+x.netPnL,0)/Math.max(1,wins.length)).toFixed(5)} BTC</span> · 
+      Media loss: <span style="color:var(--red)">${(losses.reduce((s,x)=>s+x.netPnL,0)/Math.max(1,losses.length)).toFixed(5)} BTC</span>
+    </div>
+    ${svg}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px">`;
+
+  results.forEach((r,i)=>{
+    const col=colors[i];
+    const usdMed=r.p50*avgIdx, usdP5=r.p5*avgIdx, usdP95=r.p95*avgIdx;
+    html+=`<div style="background:var(--surface2);border:1px solid ${col}30;border-radius:10px;padding:14px">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:${col};letter-spacing:1px;margin-bottom:8px">${r.label} · ~${r.nSess} sesiones</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Mediana (P50)</div>
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700" class="${r.p50>=0?'good':'bad'}">${r.p50>=0?'+':''}${r.p50.toFixed(4)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Optimista (P75)</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--green)">${r.p75>=0?'+':''}${r.p75.toFixed(4)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Peor caso (P5)</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--red)">${r.p5.toFixed(4)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Mejor caso (P95)</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--green)">+${r.p95.toFixed(4)}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">~USD Mediana</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--accent)">${usdMed>=0?'+':''}$${Math.round(usdMed).toLocaleString()}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;grid-column:1/3;border-top:1px solid var(--border);padding-top:6px">Prob. ser rentable</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700;grid-column:1/3" class="${r.pPositive>=0.6?'good':r.pPositive>=0.4?'warn':'bad'}">${(r.pPositive*100).toFixed(0)}%</div>
+      </div>
+    </div>`;
+  });
+
+  html+=`</div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:10px;line-height:1.6;background:rgba(255,214,0,.04);border:1px solid rgba(255,214,0,.15);border-radius:6px;padding:8px 10px">
+      ⚠️ Esta simulación asume que los parámetros históricos (win rate, magnitud de ganancias/pérdidas, frecuencia) se mantienen constantes en el futuro. En la práctica, las condiciones de mercado cambian. Úsala como referencia orientativa, no como predicción.
+    </div>
+  </div>`;
+
+  return html;
+}
+
+// ══════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════
+function setDot(color){
+  const d=document.getElementById('ld');
+  const c={green:'var(--green)',yellow:'var(--yellow)',red:'var(--red)'};
+  const s={green:'0 0 8px var(--green)',yellow:'0 0 8px var(--yellow)',red:'0 0 8px var(--red)'};
+  d.style.background=c[color]; d.style.boxShadow=s[color];
+}
+function setUpdLbl(){const el=document.getElementById('upd-lbl');if(el)el.textContent='Act. '+new Date().toLocaleTimeString('es-ES');}
+
+// ══════════════════════════════════════════════════
+// THEME TOGGLE
+// ══════════════════════════════════════════════════
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('theme-toggle').textContent = isLight ? '🌙' : '☀️';
+  try { localStorage.setItem('condor_theme', isLight ? 'light' : 'dark'); } catch {}
+}
+document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+loadDvol();
+updateVolSemaphore(sent.dvol);
+loadExp().then(()=>loadSent());
+// Restore saved theme
+try {
+  if (localStorage.getItem('condor_theme') === 'light') {
+    document.documentElement.classList.add('light');
+    document.getElementById('theme-toggle').textContent = '🌙';
+  }
+} catch {}
+</script>
+</body>
+</html>
